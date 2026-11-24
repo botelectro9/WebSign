@@ -106,6 +106,21 @@
   </form>
 </dialog>
 
+<!-- Shown when the browser cannot open a "Save as" picker and the download could not be
+     started directly (no user activation left after a slow export, e.g. Safari/iOS).
+     A real link clicked by the user is the most reliable way to download everywhere. -->
+<dialog id="ready-dlg" class="dlg" aria-labelledby="ready-title">
+  <form method="dialog">
+    <h2 id="ready-title" data-i18n="ready.title"></h2>
+    <p class="note" id="ready-note"></p>
+    <div class="actions">
+      <button type="submit" class="btn" value="cancel" data-i18n="ready.close"></button>
+      <button type="button" class="btn" id="ready-share" hidden data-i18n="ready.share"></button>
+      <a class="btn primary" id="ready-link" href="#" data-i18n="ready.save"></a>
+    </div>
+  </form>
+</dialog>
+
 <div id="busy" class="busy" hidden><div class="spinner" aria-hidden="true"></div><span id="busy-text"></span></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 

@@ -34,7 +34,9 @@ place a signature box, sign inside it with your mouse or your finger, and save t
    - **Overwrite original** — replaces the file you opened (Chrome or Edge on a computer
      only, and only in the original format; otherwise the button is greyed out with the reason);
    - **Create a copy** — saves `<name>-signed.pdf|png|jpg` (you choose the folder in
-     Chrome/Edge, otherwise it goes to your downloads);
+     Chrome/Edge; in other browsers a "Your file is ready" window appears, click
+     **Save file** and it goes to your downloads folder or wherever the browser asks; on
+     phones, **Share…** → *Save to Files* (iOS) lets you pick the folder);
    - **Cancel**.
 
    PDF keeps all pages of the original (text stays selectable); PNG and JPG contain the
@@ -86,7 +88,10 @@ doigt, puis enregistrez le résultat.
      sur ordinateur, et dans le format d’origine&nbsp;; sinon le bouton est grisé et la
      raison est indiquée)&nbsp;;
    - **Créer une copie** — enregistre `<nom>-signed.pdf|png|jpg` (vous choisissez le
-     dossier dans Chrome/Edge, sinon le fichier va dans vos téléchargements)&nbsp;;
+     dossier dans Chrome/Edge&nbsp;; dans les autres navigateurs, une fenêtre «&nbsp;Votre
+     fichier est prêt&nbsp;» s’affiche, cliquez sur **Enregistrer le fichier** et il va dans
+     vos téléchargements ou là où le navigateur le demande&nbsp;; sur téléphone,
+     **Partager…** → *Enregistrer dans Fichiers* (iOS) permet de choisir le dossier)&nbsp;;
    - **Annuler**.
 
    Le PDF conserve toutes les pages de l’original (le texte reste sélectionnable)&nbsp;;

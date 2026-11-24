@@ -64,6 +64,7 @@
     saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
+    readyDlg: $('ready-dlg'), readyNote: $('ready-note'), readyLink: $('ready-link'), readyShare: $('ready-share'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
 
@@ -1020,16 +1021,86 @@
     return c;
   }
 
-  function download(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  // Android browsers built on the system WebView (DuckDuckGo, Via, Lightning…) cannot
+  // download blob: URLs at all; most of them do handle data: URLs. Chromium marks the
+  // WebView with "; wv)" in its user agent; DuckDuckGo adds "DuckDuckGo/".
+  function isAndroidWebView() {
+    const ua = navigator.userAgent || '';
+    return /Android/i.test(ua) && (/; wv\)/.test(ua) || /DuckDuckGo\//.test(ua));
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // The system share sheet with a file: on iPhone/iPad it offers "Save to Files", where
+  // the user chooses the folder; on Android it offers Drive, Files, mail…
+  function canShareFile(file) {
+    try {
+      return typeof navigator.share === 'function' && typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Offers the file in a small dialog: a real link the user clicks (most reliable way to
+   * download everywhere, including Safari/iOS where a download started by script after a
+   * slow export is ignored) and, where available, the system share sheet.
+   */
+  async function offerDownload(blob, name) {
+    const webView = isAndroidWebView();
+    const url = webView ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
+    const file = new File([blob], name, { type: blob.type });
+    const shareable = canShareFile(file);
+    const link = els.readyLink;
+    link.href = url;
+    link.download = name;
+    els.readyShare.hidden = !shareable;
+    els.readyNote.textContent = t(shareable ? 'ready.noteShare' : 'ready.note', { name });
+    // The export is finished: hide the "Saving…" indicator while waiting for the user.
+    const busyWasShown = !els.busy.hidden;
+    els.busy.hidden = true;
+    return new Promise((resolve) => {
+      let saved = false;
+      let toastMsg = '';
+      const onClick = () => {
+        saved = true;
+        toastMsg = t('toast.downloaded', { name });
+        // Let the browser start the download from this click, then close.
+        setTimeout(() => els.readyDlg.close('saved'), 0);
+      };
+      const onShare = async () => {
+        try {
+          await navigator.share({ files: [file], title: name });
+          saved = true;
+          toastMsg = t('toast.shared', { name });
+          els.readyDlg.close('shared');
+        } catch (e) {
+          if (!e || e.name !== 'AbortError') toast(t('err.share', { error: errorMessage(e) }), true);
+        }
+      };
+      link.addEventListener('click', onClick);
+      els.readyShare.addEventListener('click', onShare);
+      els.readyDlg.addEventListener('close', function onClose() {
+        els.readyDlg.removeEventListener('close', onClose);
+        link.removeEventListener('click', onClick);
+        els.readyShare.removeEventListener('click', onShare);
+        if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
+        link.href = '#';
+        if (busyWasShown && busyDepth) els.busy.hidden = false;
+        if (saved) savedToast(toastMsg);
+        resolve(saved);
+      });
+      els.readyDlg.showModal();
+      link.focus();
+    });
   }
 
   /**
@@ -1059,8 +1130,10 @@
       await w.close();
       savedToast(t('toast.saved', { name: handle.name || name }));
     } else {
-      download(blob, name);
-      savedToast(t('toast.downloaded', { name }));
+      // No "Save as" picker in this browser (Firefox, Safari, mobile browsers, Brave…).
+      // A download started by script after the export is silently dropped by several of
+      // them, so hand the user a real link to click instead.
+      return offerDownload(blob, name);
     }
     return true;
   }

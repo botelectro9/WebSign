@@ -260,3 +260,6 @@
 }
 .sigbox, .sigbox * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .actions.reverse { flex-direction: row-reverse; justify-content: flex-start; }
+
+/* "File ready" dialog: three buttons may need two rows on narrow phones */
+#ready-dlg .actions { flex-wrap: wrap; }

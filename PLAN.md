@@ -150,8 +150,9 @@ add box, delete box, move, resize, stroke, erase content. New action clears redo
 ## 8. Other
 
 - No network access at all; every page has `<meta http-equiv="Content-Security-Policy">`
-  with `default-src 'none'` and `connect-src 'none'` (app pages also allow inline and
-  `blob:` scripts/workers; pdf.js runs with `isEvalSupported:false`, `useWasm:false`).
+  with `default-src 'none'`; `connect-src` is `'none'` on the landing/docs pages and
+  `blob: data:` (local data only, no network) on app pages so browser save helpers can read
+  the generated file (app pages also allow inline and `blob:` scripts/workers; pdf.js runs with `isEvalSupported:false`, `useWasm:false`).
 - `beforeunload` warning when leaving an app page with unsaved signing work (pages are
   separate files, no state carry-over).
 - Toasts for errors (unsupported file, password-protected PDF → prompt for password via
@@ -179,3 +180,12 @@ add box, delete box, move, resize, stroke, erase content. New action clears redo
 6. `beforeunload` when leaving with unsaved work; libraries not decoded at page load.
 7. Steps 1–6 run on both app pages (EN and FR).
 8. No console errors, no network requests, on every page.
+
+## Saving without a "Save as" picker (added after testing on DuckDuckGo Android)
+
+Browsers without `showSaveFilePicker` (Firefox, Safari, iOS, Android browsers) get a
+"Your file is ready" dialog: a real **Save file** link the user taps (programmatic downloads
+after a slow export are dropped by Safari/iOS), plus **Share…** (Web Share with the file)
+where supported — on iOS this offers *Save to Files* with a folder choice. Android
+WebView-based browsers (DuckDuckGo, Via…) cannot download `blob:` URLs, so they get a
+`data:` URL link instead.

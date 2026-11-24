@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src blob: data:; font-src blob: data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src blob: data:; font-src blob: data:; connect-src blob: data:; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Sign a PDF or an image in your browser. Nothing is uploaded.">
@@ -365,6 +365,9 @@ a.btn.primary { color: var(--accent-text); }
 }
 .sigbox, .sigbox * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .actions.reverse { flex-direction: row-reverse; justify-content: flex-start; }
+
+/* "File ready" dialog: three buttons may need two rows on narrow phones */
+#ready-dlg .actions { flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -473,6 +476,21 @@ a.btn.primary { color: var(--accent-text); }
     <div class="actions">
       <button type="submit" class="btn" value="cancel" data-i18n="confirm.cancel">Cancel</button>
       <button type="submit" class="btn primary" value="ok" id="confirm-ok" data-i18n="confirm.ok">Replace</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Shown when the browser cannot open a "Save as" picker and the download could not be
+     started directly (no user activation left after a slow export, e.g. Safari/iOS).
+     A real link clicked by the user is the most reliable way to download everywhere. -->
+<dialog id="ready-dlg" class="dlg" aria-labelledby="ready-title">
+  <form method="dialog">
+    <h2 id="ready-title" data-i18n="ready.title">Your file is ready</h2>
+    <p class="note" id="ready-note"></p>
+    <div class="actions">
+      <button type="submit" class="btn" value="cancel" data-i18n="ready.close">Close</button>
+      <button type="button" class="btn" id="ready-share" hidden data-i18n="ready.share">Share…</button>
+      <a class="btn primary" id="ready-link" href="#" data-i18n="ready.save">Save file</a>
     </div>
   </form>
 </dialog>
@@ -26677,6 +26695,14 @@ const WEBSIGN_STRINGS = {
  "toast.signHint": "Sign inside the box with your mouse or finger.",
  "toast.saved": "Saved {name}",
  "toast.downloaded": "Downloaded {name}",
+ "ready.title": "Your file is ready",
+ "ready.note": "This browser cannot open a “Save as” window. Click “Save file” to save {name}: depending on your browser settings, it either asks you where to save it or puts it in your Downloads folder.",
+ "ready.noteShare": "This browser cannot open a “Save as” window. “Save file” puts {name} in your Downloads folder (or asks where, depending on the browser). To choose the folder yourself, use “Share…” then “Save to Files” (iPhone, iPad) or your files app (Android).",
+ "ready.save": "Save file",
+ "ready.share": "Share…",
+ "ready.close": "Close",
+ "toast.shared": "Shared {name}",
+ "err.share": "Sharing failed: {error}",
  "toast.overwrote": "Overwrote {name}",
  "toast.rasterised": "This PDF cannot be edited directly (it may be encrypted), so it was saved as images of its pages.",
  "err.unsupported": "This file type is not supported. Open a PDF or an image.",
@@ -26758,6 +26784,7 @@ const WEBSIGN_STRINGS = {
     saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
+    readyDlg: $('ready-dlg'), readyNote: $('ready-note'), readyLink: $('ready-link'), readyShare: $('ready-share'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
 
@@ -27714,16 +27741,86 @@ const WEBSIGN_STRINGS = {
     return c;
   }
 
-  function download(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  // Android browsers built on the system WebView (DuckDuckGo, Via, Lightning…) cannot
+  // download blob: URLs at all; most of them do handle data: URLs. Chromium marks the
+  // WebView with "; wv)" in its user agent; DuckDuckGo adds "DuckDuckGo/".
+  function isAndroidWebView() {
+    const ua = navigator.userAgent || '';
+    return /Android/i.test(ua) && (/; wv\)/.test(ua) || /DuckDuckGo\//.test(ua));
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // The system share sheet with a file: on iPhone/iPad it offers "Save to Files", where
+  // the user chooses the folder; on Android it offers Drive, Files, mail…
+  function canShareFile(file) {
+    try {
+      return typeof navigator.share === 'function' && typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Offers the file in a small dialog: a real link the user clicks (most reliable way to
+   * download everywhere, including Safari/iOS where a download started by script after a
+   * slow export is ignored) and, where available, the system share sheet.
+   */
+  async function offerDownload(blob, name) {
+    const webView = isAndroidWebView();
+    const url = webView ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
+    const file = new File([blob], name, { type: blob.type });
+    const shareable = canShareFile(file);
+    const link = els.readyLink;
+    link.href = url;
+    link.download = name;
+    els.readyShare.hidden = !shareable;
+    els.readyNote.textContent = t(shareable ? 'ready.noteShare' : 'ready.note', { name });
+    // The export is finished: hide the "Saving…" indicator while waiting for the user.
+    const busyWasShown = !els.busy.hidden;
+    els.busy.hidden = true;
+    return new Promise((resolve) => {
+      let saved = false;
+      let toastMsg = '';
+      const onClick = () => {
+        saved = true;
+        toastMsg = t('toast.downloaded', { name });
+        // Let the browser start the download from this click, then close.
+        setTimeout(() => els.readyDlg.close('saved'), 0);
+      };
+      const onShare = async () => {
+        try {
+          await navigator.share({ files: [file], title: name });
+          saved = true;
+          toastMsg = t('toast.shared', { name });
+          els.readyDlg.close('shared');
+        } catch (e) {
+          if (!e || e.name !== 'AbortError') toast(t('err.share', { error: errorMessage(e) }), true);
+        }
+      };
+      link.addEventListener('click', onClick);
+      els.readyShare.addEventListener('click', onShare);
+      els.readyDlg.addEventListener('close', function onClose() {
+        els.readyDlg.removeEventListener('close', onClose);
+        link.removeEventListener('click', onClick);
+        els.readyShare.removeEventListener('click', onShare);
+        if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
+        link.href = '#';
+        if (busyWasShown && busyDepth) els.busy.hidden = false;
+        if (saved) savedToast(toastMsg);
+        resolve(saved);
+      });
+      els.readyDlg.showModal();
+      link.focus();
+    });
   }
 
   /**
@@ -27753,8 +27850,10 @@ const WEBSIGN_STRINGS = {
       await w.close();
       savedToast(t('toast.saved', { name: handle.name || name }));
     } else {
-      download(blob, name);
-      savedToast(t('toast.downloaded', { name }));
+      // No "Save as" picker in this browser (Firefox, Safari, mobile browsers, Brave…).
+      // A download started by script after the export is silently dropped by several of
+      // them, so hand the user a real link to click instead.
+      return offerDownload(blob, name);
     }
     return true;
   }

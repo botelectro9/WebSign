@@ -221,8 +221,20 @@ async function pickColor(page, key) {
   await page.click(`#pen-pop [aria-label="${name}"]`);
 }
 
+// Without a "Save as" picker, the app shows a "file ready" dialog with a real link the
+// user clicks (programmatic downloads after a slow export are dropped by some browsers).
 async function downloadFrom(page, action) {
-  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), action()]);
+  const [dl] = await Promise.all([
+    page.waitForEvent('download', { timeout: 30000 }),
+    (async () => {
+      await action();
+      await page.waitForSelector('#ready-dlg[open] #ready-link', { timeout: 30000 });
+      const href = await page.getAttribute('#ready-link', 'href');
+      check(/^(blob|data):/.test(href), 'file-ready dialog offers a local link');
+      await page.click('#ready-link');
+    })(),
+  ]);
+  await page.waitForSelector('#ready-dlg:not([open])', { state: 'attached', timeout: 5000 });
   const p = await dl.path();
   return { name: dl.suggestedFilename(), bytes: readFileSync(p) };
 }
@@ -352,7 +364,7 @@ async function staticSuite() {
       libs: document.querySelectorAll('script[type="application/octet-stream"]').length,
     }));
     check(info.lang === expect[rel].lang && expect[rel].title.test(info.title), `${rel}: lang=${info.lang}, title "${info.title}"`);
-    check(/connect-src 'none'/.test(info.csp) && /default-src 'none'/.test(info.csp), `${rel}: restrictive CSP`);
+    check(/connect-src (?:'none'|blob: data:);/.test(info.csp) && /default-src 'none'/.test(info.csp), `${rel}: restrictive CSP`);
     check(rel.startsWith('app/') ? info.libs === 3 : info.libs === 0, `${rel}: embeds ${info.libs} libraries`);
     const bad = [];
     for (const href of info.links) {
@@ -762,6 +774,46 @@ async function appSuite(lang) {
   await sleep(300);
   check((await m.evaluate(() => window.scrollY)) > sb + 50, 'touch drag outside the box scrolls the page');
   await mctx.close();
+
+  // =========================================================================
+  section(`[${lang}] Android WebView browser (DuckDuckGo UA) without "Save as": data: link and share sheet`);
+  const wctx = await browser.newContext({
+    viewport: { width: 1000, height: 800 }, acceptDownloads: true,
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0 Mobile Safari/537.36 DuckDuckGo/5',
+  });
+  await wctx.addInitScript(NO_FS_API);
+  await wctx.addInitScript(() => {
+    window.__shared = [];
+    navigator.canShare = (d) => !!(d && d.files && d.files.length);
+    navigator.share = async (d) => { window.__shared.push(...d.files.map((f) => ({ name: f.name, type: f.type, size: f.size }))); };
+  });
+  const w = await wctx.newPage();
+  watch(w, 'webview');
+  await w.goto(URL_);
+  await openViaInput(w, pngPath);
+  await waitRendered(w, 0);
+  await w.click('#tb-box');
+  const wb = await rectOf(w, '.sigbox');
+  await mouseDrag(w, { x: wb.x + wb.width * 0.2, y: wb.y + wb.height * 0.5 }, { x: wb.x + wb.width * 0.7, y: wb.y + wb.height * 0.4 });
+  check((await w.evaluate(() => window.__websign.strokes.length)) === 1, 'signed in the WebView context');
+  // share sheet
+  await saveCopy(w, 'png', false);
+  await w.waitForSelector('#ready-dlg[open]');
+  const wHref = await w.getAttribute('#ready-link', 'href');
+  check(wHref.startsWith('data:image/png;base64,'), 'Android WebView gets a data: link (blob: downloads unsupported there)');
+  check(await w.isVisible('#ready-share'), 'share button shown when files can be shared');
+  await w.screenshot({ path: join(SHOTS, `${lang}-webview-ready.png`) });
+  await w.click('#ready-share');
+  await w.waitForSelector('#ready-dlg:not([open])', { state: 'attached', timeout: 5000 });
+  const shared = await w.evaluate(() => window.__shared);
+  check(shared.length === 1 && shared[0].name === 'photo-signed.png' && shared[0].type === 'image/png' && shared[0].size > 1000,
+    `share sheet receives the signed file (${JSON.stringify(shared)})`);
+  // download through the data: link
+  const wdl = await downloadFrom(w, () => saveCopy(w, 'png', false));
+  check(wdl.name === 'photo-signed.png' && wdl.bytes[0] === 0x89 && wdl.bytes[1] === 0x50, `data: link downloads the PNG (${wdl.name}, ${wdl.bytes.length} bytes)`);
+  const wsig = await downloadFrom(w, () => w.click('#tb-sig'));
+  check(wsig.name === 'signature.png' && wsig.bytes[0] === 0x89, 'signature PNG also downloadable in the WebView');
+  await wctx.close();
 
   // =========================================================================
   section(`[${lang}] File System Access API (stubbed in-memory handles): overwrite original / create a copy`);
