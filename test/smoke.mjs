@@ -870,6 +870,19 @@ async function appSuite(lang) {
     })(),
   ]);
   check(renamed.suggestedFilename() === 'Contrat signefinal.pdf', `typed name used, forbidden characters removed, accents simplified (${renamed.suggestedFilename()})`);
+  check(await w.isHidden('#ready-hint'), 'no WebView warning when the browser can share');
+  // a WebView browser without share sheet (DuckDuckGo for Android): warning + image to long-press
+  await w.evaluate(() => { navigator.share = undefined; navigator.canShare = undefined; });
+  await w.click('#tb-sig');
+  await w.waitForSelector('#ready-dlg[open]');
+  check(await w.isVisible('#ready-hint') && await w.isVisible('#ready-preview'), 'no share sheet on Android: warning and signature image to long-press');
+  check((await w.getAttribute('#ready-img', 'src')).startsWith('data:image/png'), 'long-press image is the signature PNG');
+  await w.screenshot({ path: join(SHOTS, `${lang}-webview-limited.png`) });
+  await w.click('#ready-dlg button[value=cancel]');
+  await saveCopy(w, 'pdf', false);
+  await w.waitForSelector('#ready-dlg[open]');
+  check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview'), 'PDF: warning only, no image');
+  await w.click('#ready-dlg button[value=cancel]');
   // download through the data: link
   const wdl = await downloadFrom(w, () => saveCopy(w, 'png', false));
   check(wdl.name === 'photo-signed.png' && wdl.bytes[0] === 0x89 && wdl.bytes[1] === 0x50, `data: link downloads the PNG (${wdl.name}, ${wdl.bytes.length} bytes)`);

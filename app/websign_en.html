@@ -437,6 +437,16 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
 .name-row { display: flex; align-items: center; gap: 8px; }
 .name-row .field { flex: 1; min-width: 0; font-size: 16px; } /* 16px: no zoom on iOS */
 .name-row .ext { color: var(--muted); font-weight: 600; }
+
+/* browsers that cannot save page-made files (Android WebView: DuckDuckGo…): image to long-press */
+.dlg.compact .note { font-size: 13px; margin: 10px 0 0; }
+.preview { margin: 10px 0 0; text-align: center; }
+.preview img {
+  display: block; margin: 0 auto 4px; max-width: 100%; max-height: 140px;
+  background: #fff; border-radius: 4px;
+  -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto;
+}
+.preview figcaption { font-size: 12.5px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -570,6 +580,11 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
       <input id="ready-name" class="field" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
       <span id="ready-ext" class="ext"></span>
     </div>
+    <p class="note" id="ready-hint" hidden data-i18n="ready.webviewHint">If nothing is saved, this browser cannot save files created by a web page (DuckDuckGo for Android, for example). Open WebSign in Chrome or Firefox instead.</p>
+    <figure class="preview" id="ready-preview" hidden>
+      <img id="ready-img" alt="">
+      <figcaption data-i18n="ready.longPress">You can also long-press the image to save it.</figcaption>
+    </figure>
     <div class="actions">
       <button type="submit" class="btn" value="cancel" data-i18n="ready.close">Cancel</button>
       <button type="button" class="btn" id="ready-share" hidden data-i18n="ready.share">Share…</button>
@@ -26787,6 +26802,8 @@ const WEBSIGN_STRINGS = {
  "vision.tritan": "Tritanopia (blue-blind)",
  "ready.title": "Save as",
  "ready.name": "File name",
+ "ready.webviewHint": "If nothing is saved, this browser cannot save files created by a web page (DuckDuckGo for Android, for example). Open WebSign in Chrome or Firefox instead.",
+ "ready.longPress": "You can also long-press the image to save it.",
  "ready.save": "Save",
  "ready.share": "Share…",
  "ready.close": "Cancel",
@@ -26876,6 +26893,7 @@ const WEBSIGN_STRINGS = {
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
     readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
     readyName: $('ready-name'), readyExt: $('ready-ext'),
+    readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
 
@@ -27929,6 +27947,13 @@ const WEBSIGN_STRINGS = {
     els.readyExt.textContent = ext;
     syncName();
     els.readyShare.hidden = !shareable;
+    // Android browsers built on the WebView (DuckDuckGo…) have no share sheet and may not
+    // save page-made files at all: say so, and offer the image itself, which their
+    // long-press menu can sometimes save.
+    const limited = webView && typeof navigator.share !== 'function';
+    els.readyHint.hidden = !limited;
+    els.readyPreview.hidden = !(limited && /^image\//.test(blob.type));
+    els.readyImg.src = els.readyPreview.hidden ? '' : url;
     // The export is finished: hide the "Saving…" indicator while waiting for the user.
     const busyWasShown = !els.busy.hidden;
     els.busy.hidden = true;
@@ -27969,6 +27994,7 @@ const WEBSIGN_STRINGS = {
         els.readyShare.removeEventListener('click', onShare);
         if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
         link.href = '#';
+        els.readyImg.removeAttribute('src');
         if (busyWasShown && busyDepth) els.busy.hidden = false;
         if (saved) savedToast(toastMsg);
         resolve(saved);

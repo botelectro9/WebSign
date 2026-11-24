@@ -67,6 +67,7 @@
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
     readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
     readyName: $('ready-name'), readyExt: $('ready-ext'),
+    readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
 
@@ -1120,6 +1121,13 @@
     els.readyExt.textContent = ext;
     syncName();
     els.readyShare.hidden = !shareable;
+    // Android browsers built on the WebView (DuckDuckGo…) have no share sheet and may not
+    // save page-made files at all: say so, and offer the image itself, which their
+    // long-press menu can sometimes save.
+    const limited = webView && typeof navigator.share !== 'function';
+    els.readyHint.hidden = !limited;
+    els.readyPreview.hidden = !(limited && /^image\//.test(blob.type));
+    els.readyImg.src = els.readyPreview.hidden ? '' : url;
     // The export is finished: hide the "Saving…" indicator while waiting for the user.
     const busyWasShown = !els.busy.hidden;
     els.busy.hidden = true;
@@ -1160,6 +1168,7 @@
         els.readyShare.removeEventListener('click', onShare);
         if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
         link.href = '#';
+        els.readyImg.removeAttribute('src');
         if (busyWasShown && busyDepth) els.busy.hidden = false;
         if (saved) savedToast(toastMsg);
         resolve(saved);
