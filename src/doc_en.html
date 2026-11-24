@@ -36,7 +36,7 @@
 
 <h2 id="open">Opening a file</h2>
 <h3>With the button</h3>
-<p>On the start screen, click <strong>Open PDF or image</strong> and choose a file. In Chrome, Edge and other Chromium-based browsers on a computer, this opens the system file picker in a way that also allows WebSign to overwrite the original file later, if you ask it to (see <a href="#overwrite">Overwrite or copy</a>).</p>
+<p>On the start screen, click <strong>Open PDF or image</strong> and choose a file.</p>
 <h3>By drag and drop</h3>
 <p>Drop a file anywhere on the page. This works on the start screen and also when a document is already open: the dropped file then replaces the current document. If you have signing work that has not been saved, WebSign asks for confirmation first.</p>
 <p>Once a document is open, the start screen is no longer shown. To open another file without drag and drop (on a phone, for instance), reload the page or go back to the WebSign home page and open the app again.</p>
@@ -94,7 +94,7 @@
 <ol>
   <li>the <strong>format</strong>: PDF, PNG or JPG (preselected: the format of the original file, or PDF);</li>
   <li>the option <strong>Keep the box outline visible</strong>, unticked by default: when ticked, a thin grey rectangle is drawn around the signature;</li>
-  <li>three buttons: <strong>Overwrite original</strong>, <strong>Create a copy</strong> and <strong>Cancel</strong>; on Android, a fourth button, <strong>Share…</strong>, sends the signed file to another app (Drive, Files, mail, messaging…). In browsers that cannot share files (DuckDuckGo, for example), it is replaced by <strong>Open in new tab</strong>, which shows the signed file in a new tab so you can save it from the browser’s own viewer.</li>
+  <li>the buttons <strong>Cancel</strong> and <strong>Save</strong>; on Android, also <strong>Share…</strong> when the browser can share files: it sends the signed file to another app (Drive, Files, mail, messaging…).</li>
 </ol>
 <h3>What each format contains</h3>
 <dl>
@@ -109,22 +109,14 @@
 </dl>
 <p>JPG has no transparency: transparent areas become white. JPG images are saved at quality 92%.</p>
 
-<h3 id="overwrite">Overwrite original, Create a copy or Cancel</h3>
-<dl>
-  <dt>Create a copy</dt>
-  <dd>Saves a new file named after the original with <code>-signed</code> added (for example <code>contract-signed.pdf</code>). Where the browser supports it (Chrome, Edge), a “Save as” window lets you choose the folder and the name; otherwise a small <strong>Save as</strong> window asks for the file name: type it and tap <strong>Save</strong>, and the browser either asks where to save it or puts it in your downloads folder, depending on its settings (in Firefox and Safari you can turn on “Always ask where to save files”). On phones and tablets, the same window also has a <strong>Share…</strong> button: on iPhone and iPad choose <strong>Save to Files</strong> to pick the folder yourself; on Android, pick your files app or cloud storage. In Android browsers built on the system WebView, such as DuckDuckGo, WebSign uses a download link these browsers can handle. The original file is not touched.</dd>
-  <dt>Overwrite original</dt>
-  <dd>Replaces the file you opened with the signed version. The browser asks for your permission the first time. This button is only active when all of these are true:
-    <ul>
-      <li>your browser supports writing to local files (the <em>File System Access</em> feature: Chrome, Edge and other Chromium-based browsers on a computer; not Firefox, not Safari, not most phones);</li>
-      <li>the file was opened with the <em>Open</em> button or dropped onto the page in such a browser (WebSign then knows where it is);</li>
-      <li>the chosen format is the format of the original (PDF to PDF, PNG to PNG, JPG to JPG). For a PDF with several pages, only PDF can overwrite it, since PNG and JPG contain one page.</li>
-    </ul>
-    When it is not available, the button is greyed out and a short line under it explains why. WebSign never replaces an overwrite by a download without telling you.</dd>
-  <dt>Cancel</dt>
-  <dd>Closes the window without saving.</dd>
-</dl>
-<p>Saving several times in a row is safe: WebSign always starts again from the original, unsigned content it read when you opened the file, so the signature is never stamped twice. Keep in mind that after an overwrite, the file on your disk contains the signature permanently; if you open it again later, the signature is part of the document.</p>
+<h3 id="save-as">Save</h3>
+<p><strong>Save</strong> creates a new file named after the original with <code>-signed</code> added (for example <code>contract-signed.pdf</code>); the original file is never modified.</p>
+<ul>
+  <li>In Chrome and Edge on a computer, the browser’s own “Save as” window lets you choose the folder and the name.</li>
+  <li>In other browsers, a small <strong>Save as</strong> window asks for the file name: type it and tap <strong>Save</strong>. The browser then puts the file in your downloads folder, or asks where to save it, depending on its settings (in Firefox and Safari you can turn on “Always ask where to save files”). On phones and tablets, a <strong>Share…</strong> button may also be offered: on iPhone and iPad choose <strong>Save to Files</strong> to pick the folder yourself.</li>
+</ul>
+<p>The <strong>Save signature</strong> button works the same way, with the name <code>signature.png</code>.</p>
+<p>Saving several times in a row is safe: WebSign always starts again from the original, unsigned content it read when you opened the file, so the signature is never stamped twice.</p>
 <p>If you try to leave or reload the page while you have signing work that has not been saved, the browser asks you to confirm.</p>
 
 <h2 id="vision">Colours for colour blindness</h2>
@@ -164,7 +156,7 @@ doc/doc_fr.html       this guide in French</code></pre>
   <li><strong>Forms and annotations</strong> are shown as they appear in the PDF but cannot be filled in.</li>
   <li><strong>PNG and JPG exports contain one page.</strong> Use PDF to keep all the pages.</li>
   <li><strong>Very large pages or images</strong> are scaled down if needed to stay within the limits of browser canvases (about 16 megapixels).</li>
-  <li><strong>Browsers.</strong> WebSign was tested with Chrome on a computer and with phone emulation. It is designed for current versions of Chrome, Edge, Firefox and Safari, on computers and phones, but those other browsers have not all been tested. Overwriting the original file needs Chrome or Edge on a computer.</li>
+  <li><strong>Browsers.</strong> WebSign was tested with Chrome on a computer and with phone emulation. It is designed for current versions of Chrome, Edge, Firefox and Safari, on computers and phones, but those other browsers have not all been tested. In DuckDuckGo for Android, the browser chooses the name of the saved file.</li>
 </ul>
 
 <h2 id="licences">Licences</h2>
@@ -177,15 +169,13 @@ doc/doc_fr.html       this guide in French</code></pre>
 
 <h2 id="faq">FAQ</h2>
 <dl>
-  <dt>Nothing is saved in DuckDuckGo (or another browser) on Android.</dt>
-  <dd>Some Android browsers built on the system “WebView”, such as DuckDuckGo, cannot save files created by a web page, and no page can work around it. The <strong>Save as</strong> window then shows a warning and, for images, the image itself: a long-press on it may offer to save it. <strong>Open in new tab</strong> shows the file in a new tab, where the browser’s own viewer may let you save it. Otherwise, open WebSign in Chrome or Firefox for Android, where saving works.</dd>
-  <dt>“Overwrite original” fails on Android.</dt>
-  <dd>Chrome for Android sometimes refuses to replace a file that changed on the phone after it was opened. WebSign tries once more; if it still fails, it says so and opens the <strong>Save as</strong> window with the signed file ready, so you can save a copy instead.</dd>
+  <dt>In DuckDuckGo for Android, the saved file has a different name.</dt>
+  <dd>DuckDuckGo for Android saves the file but chooses its own file name, ignoring the one you typed; no web page can change that. Rename the file in your Files app, or use Chrome or Firefox for Android, which keep your name.</dd>
+  <dt>Nothing is saved in my Android browser.</dt>
+  <dd>A few Android browsers cannot save files created by a web page. The <strong>Save as</strong> window then shows a warning and, for images, the image itself: a long-press on it may offer to save it. Otherwise, open WebSign in Chrome or Firefox for Android.</dd>
   <dt>Is my document sent anywhere?</dt>
   <dd>No. Everything happens in your browser. You can check it by disconnecting from the Internet after opening the page: WebSign keeps working.</dd>
-  <dt>Why is “Overwrite original” greyed out?</dt>
-  <dd>The line under the buttons gives the reason: your browser cannot write to local files, the file location is unknown, or the chosen format differs from the original. Use <em>Create a copy</em> instead.</dd>
-  <dt>Where is my copy saved?</dt>
+  <dt>Where is my file saved?</dt>
   <dd>In Chrome and Edge, where you choose in the “Save as” window. In other browsers, after you tap <strong>Save</strong> in the <strong>Save as</strong> window: in your downloads folder, unless the browser is set to ask where to save each file (on iPhone, in the Files app, under Downloads).</dd>
   <dt>My signature looks stretched.</dt>
   <dd>The signature follows the shape of the box. Resize the box back to its previous proportions, or erase and sign again.</dd>

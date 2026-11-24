@@ -246,7 +246,7 @@ async function saveCopy(page, fmt, outline) {
   await page.check(`#save-dlg input[name=fmt][value=${fmt}]`);
   if (outline) await page.check('#save-outline'); else await page.uncheck('#save-outline');
   const android = await page.evaluate(() => /Android/.test(navigator.userAgent));
-  check((await page.isHidden('#save-share') && await page.isHidden('#save-open')) === !android, 'Share… or Open in new tab shown on Android only');
+  if (!android) check(await page.isHidden('#save-share'), 'no Share… outside Android');
   await page.click('#save-copy');
 }
 
@@ -402,6 +402,8 @@ async function staticSuite() {
   check((await page.$eval('#vision-select', (s) => [...s.options].map((o) => o.value).join(','))) === 'normal,protan,deutan,tritan' &&
     (await page.inputValue('#vision-select')) === 'normal', 'landing: colours drop-down at the top, Normal colours by default');
   await page.selectOption('#vision-select', 'deutan');
+  await page.waitForFunction((v) => localStorage.getItem('websign.vision') === v, 'deutan');
+  await page.waitForTimeout(300);
   check((await page.evaluate(() => document.documentElement.dataset.vision)) === 'deutan', 'landing: choosing a palette recolours the page');
   await page.screenshot({ path: join(SHOTS, 'landing-deutan.png') });
   await page.goto(fileUrl('doc/doc_fr.html'));
@@ -413,6 +415,8 @@ async function staticSuite() {
   });
   check(docPickFirst, 'docs: colours drop-down at the start of the page');
   await page.selectOption('#vision-select', 'tritan');
+  await page.waitForFunction((v) => localStorage.getItem('websign.vision') === v, 'tritan');
+  await page.waitForTimeout(300);
   await page.screenshot({ path: join(SHOTS, 'doc-tritan.png') });
   await page.goto(fileUrl('app/websign_fr.html'));
   check((await page.evaluate(() => document.documentElement.dataset.vision)) === 'tritan', 'app page applies the stored palette');
@@ -594,9 +598,9 @@ async function appSuite(lang) {
 
   await page.click('#tb-save');
   check(await page.isVisible('#save-dlg'), 'save dialog opens');
-  check(await page.isDisabled('#save-overwrite'), 'Overwrite disabled without File System Access API');
-  const reason = await page.textContent('#save-reason');
-  check(reason === await tr(page, 'reason.unsupported'), `disabled reason shown ("${reason}")`);
+  const saveBtns = await page.$$eval('#save-dlg .actions button', (bs) => bs.filter((b) => !b.hidden).map((b) => b.id));
+  check(JSON.stringify(saveBtns) === JSON.stringify(['save-cancel', 'save-copy']) && (await page.textContent('#save-copy')) === await tr(page, 'save.copy'),
+    `save window: Cancel and Save only, no Overwrite (${saveBtns.join(',')})`);
   check(await page.isChecked('#save-dlg input[value=pdf]') && !(await page.isChecked('#save-outline')), 'defaults: PDF, outline unchecked');
   await page.check('#save-dlg input[value=png]');
   check((await page.textContent('#save-note')) === await tr(page, 'save.notePageBox', { n: 1, total: 2 }), 'dialog states which page is exported');
@@ -852,7 +856,7 @@ async function appSuite(lang) {
   await saveCopy(w, 'png', false);
   await w.waitForSelector('#ready-dlg[open]');
   const wHref = await w.getAttribute('#ready-link', 'href');
-  check(wHref.startsWith('data:image/png;base64,'), 'Android browser gets a data: link (blob: downloads unsupported in WebView browsers)');
+  check(wHref.startsWith('data:image/png;name=photo-signed.png;base64,'), 'Android browser gets a data: link (blob: downloads unsupported in WebView browsers)');
   check(await w.isVisible('#ready-share'), 'share button shown when files can be shared');
   await w.screenshot({ path: join(SHOTS, `${lang}-webview-ready.png`) });
   await w.click('#ready-share');
@@ -894,18 +898,10 @@ async function appSuite(lang) {
   await w.click('#ready-dlg button[value=cancel]');
   await w.click('#tb-save');
   await w.check('#save-dlg input[name=fmt][value=pdf]');
-  check(await w.isHidden('#save-share') && await w.isVisible('#save-open'), 'no share sheet: Open in new tab replaces Share…');
-  await w.screenshot({ path: join(SHOTS, `${lang}-android-save-open.png`) });
-  const [tab] = await Promise.all([wctx.waitForEvent('page'), w.click('#save-open')]);
-  await tab.waitForURL(/^blob:/, { timeout: 30000 });
-  const tabBytes = await w.evaluate(async (u) => { const r = await fetch(u); const b = new Uint8Array(await r.arrayBuffer()); return [r.headers.get('content-type'), String.fromCharCode(...b.slice(0, 5))]; }, tab.url());
-  check(tabBytes[0] === 'application/pdf' && tabBytes[1] === '%PDF-', `Open in new tab shows the signed PDF (${tabBytes.join(' ')})`);
-  await tab.close();
-  await w.click('#tb-save');
-  await w.check('#save-dlg input[name=fmt][value=pdf]');
+  check(await w.isHidden('#save-share'), 'no share sheet: no Share… button');
   await w.click('#save-copy');
   await w.waitForSelector('#ready-dlg[open]');
-  check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview') && await w.isVisible('#ready-open'), 'PDF: warning and Open in new tab, no image');
+  check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview'), 'PDF: warning only, no image');
   await w.click('#ready-dlg button[value=cancel]');
   // download through the data: link
   const wdl = await downloadFrom(w, () => saveCopy(w, 'png', false));
@@ -915,103 +911,35 @@ async function appSuite(lang) {
   await wctx.close();
 
   // =========================================================================
-  section(`[${lang}] File System Access API (stubbed in-memory handles): overwrite original / create a copy`);
+  section(`[${lang}] Save with the browser's own "Save as" window (stubbed showSaveFilePicker)`);
   const fctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true });
   await fctx.addInitScript(FAKE_FS);
-  let f = await fctx.newPage();
+  const f = await fctx.newPage();
   watch(f, 'fs-stub');
   let downloads = 0;
   f.on('download', () => downloads++);
   await f.goto(URL_);
-  await f.evaluate(({ b64 }) => { window.__fakeFs.files['contract.pdf'] = { b64, type: 'application/pdf' }; window.__fakeFs.nextOpen = 'contract.pdf'; },
-    { b64: pdfBytes.toString('base64') });
-  await f.click('#open-btn');
+  await openViaInput(f, pdfPath);
   await waitRendered(f, 0);
   await f.click('#tb-box');
   await pickColor(f, 'color.red');
   await mouseSign(f);
   const fbox = await f.evaluate(() => window.__websign.box);
   await f.click('#tb-save');
-  check(await f.isEnabled('#save-overwrite'), 'Overwrite enabled for PDF opened through a writable handle');
-  await f.check('#save-dlg input[value=png]');
-  check(await f.isDisabled('#save-overwrite') && (await f.textContent('#save-reason')) === await tr(f, 'reason.format', { format: 'PDF' }), 'Overwrite disabled when the format differs (PNG for a PDF)');
-  await f.check('#save-dlg input[value=pdf]');
-  await f.evaluate(() => { window.__fakeFs.permission = 'denied'; });
-  await f.click('#save-overwrite');
-  const permMsg = await tr(f, 'err.permission');
-  await f.waitForFunction((msg) => document.getElementById('toast').textContent === msg, permMsg);
-  check((await f.evaluate(() => window.__fakeFs.writes.length)) === 0, 'permission denied: nothing written, message shown');
-  await f.evaluate(() => { window.__fakeFs.permission = 'granted'; });
-  const readFake = (name) => f.evaluate((n) => window.__fakeFs.files[n].b64, name).then((b) => Buffer.from(b, 'base64'));
-  for (const round of [1, 2]) {
-    await f.click('#tb-save');
-    await f.click('#save-overwrite');
-    await f.waitForFunction((n) => window.__fakeFs.writes.length === n, round);
-    const written = await readFake('contract.pdf');
-    const wi = await pdfInfo(written);
-    check(isPdf(written) && wi.pages === 2 && wi.images[0] === 1,
-      `overwrite #${round}: valid signed PDF written (${written.length} bytes, images ${wi.images}) — signature stamped once`);
-  }
-  an = await analyseExportedPdf(browser, await readFake('contract.pdf'), 0, fbox);
-  check(an.tl > 100 && an.br === 0 && an.outside === 0, `overwritten PDF renders the signature in place (tl=${an.tl})`);
-  await f.click('#tb-save');
   await f.click('#save-copy');
-  await f.waitForFunction(() => window.__fakeFs.writes.length === 3);
-  const copy = await f.evaluate(() => window.__fakeFs.writes[2]);
-  check(copy.name === 'contract-signed.pdf' && (await f.evaluate(() => window.__fakeFs.saveCalls)) === 1, `Create a copy uses showSaveFilePicker (${copy.name})`);
-  check(downloads === 0, 'no download fallback was used when pickers are available');
-  // overwrite when the phone reports the file changed: one retry, then a clear message + Save as window
-  await f.evaluate(() => { window.__fakeFs.failWrites = 1; });
-  await f.click('#tb-save');
-  await f.click('#save-overwrite');
-  await f.waitForFunction(() => window.__fakeFs.writes.length === 4);
-  check((await f.evaluate(() => window.__fakeFs.writes[3].name)) === 'contract.pdf', 'overwrite retried once after "file changed" error and succeeded');
-  await f.evaluate(() => { window.__fakeFs.failWrites = 2; });
-  await f.click('#tb-save');
-  await f.click('#save-overwrite');
-  await f.waitForSelector('#ready-dlg[open]', { timeout: 30000 });
-  const owMsg = await tr(f, 'err.overwriteChanged');
-  check((await f.textContent('#toast')) === owMsg && (await f.inputValue('#ready-name')) === 'contract-signed',
-    'overwrite still failing: clear message and the Save as window with the file ready');
-  await f.click('#ready-dlg button[value=cancel]');
-  check((await f.evaluate(() => window.__fakeFs.writes.length)) === 4, 'nothing written by the failed overwrite');
-  // image opened through a handle: PNG overwrite allowed, JPG not
-  // (a fresh page: once a document is open, the start screen's Open button is gone)
-  f = await fctx.newPage();
-  watch(f, 'fs-stub-image');
-  await f.goto(URL_);
-  await f.evaluate(({ b64 }) => { window.__fakeFs.files['photo.png'] = { b64, type: 'image/png' }; window.__fakeFs.nextOpen = 'photo.png'; },
-    { b64: pngBytes.toString('base64') });
-  await f.click('#open-btn');
-  await f.waitForFunction(() => window.__websign.kind === 'image');
-  await f.click('#tb-box');
-  await pickColor(f, 'color.red');
-  await mouseSign(f);
-  await f.click('#tb-save');
-  check(await f.isEnabled('#save-overwrite'), 'PNG opened via handle: Overwrite enabled for PNG');
-  await f.check('#save-dlg input[value=jpg]');
-  check(await f.isDisabled('#save-overwrite'), 'PNG opened via handle: Overwrite disabled for JPG');
-  await f.check('#save-dlg input[value=png]');
-  await f.click('#save-overwrite');
   await f.waitForFunction(() => window.__fakeFs.writes.length === 1);
-  const wpng = await readFake('photo.png');
-  an = await analyseBytes(f, wpng, 'image/png', await f.evaluate(() => window.__websign.box));
-  check(wpng[0] === 0x89 && an.W === 900 && an.tl > 100, `PNG overwritten in place with the signed image (${an.W}x${an.H})`);
+  const fw = await f.evaluate(() => window.__fakeFs.writes[0]);
+  const fbytes = await f.evaluate((n) => window.__fakeFs.files[n].b64, fw.name).then((b) => Buffer.from(b, 'base64'));
+  const fi = await pdfInfo(fbytes);
+  check(fw.name === 'sample-signed.pdf' && (await f.evaluate(() => window.__fakeFs.saveCalls)) === 1 && isPdf(fbytes) && fi.images[0] === 1,
+    `Save uses the browser's Save as window and writes the signed PDF (${fw.name})`);
+  const fan = await analyseExportedPdf(browser, fbytes, 0, fbox);
+  check(fan.tl > 100 && fan.br === 0 && fan.outside === 0, `saved PDF renders the signature in place (tl=${fan.tl})`);
+  await f.click('#tb-sig');
+  await f.waitForFunction(() => window.__fakeFs.writes.length === 2);
+  check((await f.evaluate(() => window.__fakeFs.writes[1].name)) === 'signature.png', 'Save signature also uses the Save as window');
+  check(downloads === 0, 'no download fallback was used when the Save as window exists');
   await fctx.close();
-
-  // =========================================================================
-  section(`[${lang}] File opened without a handle while the API exists (drag & drop fallback)`);
-  const dctx = await browser.newContext({ viewport: { width: 1000, height: 800 } });
-  await dctx.addInitScript(FAKE_FS);
-  const dpage = await dctx.newPage();
-  watch(dpage, 'drop');
-  await dpage.goto(URL_);
-  await dropFile(dpage, 'sample.pdf', pdfBytes, 'application/pdf');
-  await waitRendered(dpage, 0);
-  await dpage.click('#tb-save');
-  check(await dpage.isDisabled('#save-overwrite') && (await dpage.textContent('#save-reason')) === await tr(dpage, 'reason.noHandle'),
-    'Overwrite disabled when there is no file handle');
-  await dctx.close();
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });

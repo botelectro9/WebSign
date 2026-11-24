@@ -334,7 +334,7 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 
 <h2 id="ouvrir">Ouvrir un fichier</h2>
 <h3>Avec le bouton</h3>
-<p>Sur l’écran d’accueil de l’application, cliquez sur <strong>Ouvrir un PDF ou une image</strong> et choisissez un fichier. Dans Chrome, Edge et les autres navigateurs basés sur Chromium sur ordinateur, c’est le sélecteur de fichiers du système qui s’ouvre, ce qui permet ensuite à WebSign d’écraser le fichier d’origine si vous le demandez (voir <a href="#ecraser">Écraser ou copier</a>).</p>
+<p>Sur l’écran d’accueil de l’application, cliquez sur <strong>Ouvrir un PDF ou une image</strong> et choisissez un fichier.</p>
 <h3>Par glisser-déposer</h3>
 <p>Déposez un fichier n’importe où sur la page. Cela fonctionne sur l’écran d’accueil, mais aussi quand un document est déjà ouvert&#8239;: le fichier déposé remplace alors le document en cours. Si une signature n’a pas encore été enregistrée, WebSign vous demande d’abord confirmation.</p>
 <p>Une fois un document ouvert, l’écran d’accueil n’est plus affiché. Pour ouvrir un autre fichier sans glisser-déposer (sur un téléphone, par exemple), rechargez la page ou revenez à la page d’accueil de WebSign, puis rouvrez l’application.</p>
@@ -392,7 +392,7 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 <ol>
   <li>le <strong>format</strong>&#8239;: PDF, PNG ou JPG (présélectionné&#8239;: le format du fichier d’origine, sinon PDF)&#8239;;</li>
   <li>l’option <strong>Garder le contour du cadre visible</strong>, décochée par défaut&#8239;: si elle est cochée, un fin rectangle gris est tracé autour de la signature&#8239;;</li>
-  <li>trois boutons&#8239;: <strong>Écraser l’original</strong>, <strong>Créer une copie</strong> et <strong>Annuler</strong>&#8239;; sur Android, un quatrième bouton, <strong>Partager…</strong>, envoie le fichier signé vers une autre application (Drive, Fichiers, messagerie…). Dans les navigateurs qui ne savent pas partager de fichiers (DuckDuckGo, par exemple), il est remplacé par <strong>Ouvrir dans un nouvel onglet</strong>, qui affiche le fichier signé dans un nouvel onglet pour l’enregistrer depuis la visionneuse du navigateur.</li>
+  <li>les boutons <strong>Annuler</strong> et <strong>Enregistrer</strong>&#8239;; sur Android, aussi <strong>Partager…</strong> quand le navigateur sait partager des fichiers&#8239;: il envoie le fichier signé vers une autre application (Drive, Fichiers, messagerie…).</li>
 </ol>
 <h3>Contenu de chaque format</h3>
 <dl>
@@ -407,22 +407,14 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 </dl>
 <p>Le JPG ne gère pas la transparence&#8239;: les zones transparentes deviennent blanches. Les JPG sont enregistrés en qualité 92&#8239;%.</p>
 
-<h3 id="ecraser">Écraser l’original, créer une copie ou annuler</h3>
-<dl>
-  <dt>Créer une copie</dt>
-  <dd>Enregistre un nouveau fichier portant le nom de l’original suivi de <code>-signed</code> (par exemple <code>contrat-signed.pdf</code>). Si le navigateur le permet (Chrome, Edge), une fenêtre «&#8239;Enregistrer sous&#8239;» vous laisse choisir le dossier et le nom&#8239;; sinon, une petite fenêtre <strong>Enregistrer sous</strong> vous demande le nom du fichier&#8239;: saisissez-le et touchez <strong>Enregistrer</strong>&#8239;; selon ses réglages, le navigateur vous demande où l’enregistrer ou le place dans votre dossier de téléchargements (dans Firefox et Safari, vous pouvez activer «&#8239;Toujours demander où enregistrer les fichiers&#8239;»). Sur téléphone et tablette, la même fenêtre propose aussi un bouton <strong>Partager…</strong>&#8239;: sur iPhone et iPad, choisissez <strong>Enregistrer dans Fichiers</strong> pour choisir vous-même le dossier&#8239;; sur Android, choisissez votre application de fichiers ou votre stockage en ligne. Dans les navigateurs Android basés sur la WebView du système, comme DuckDuckGo, WebSign utilise un lien de téléchargement compatible avec ces navigateurs. Le fichier d’origine n’est pas modifié.</dd>
-  <dt>Écraser l’original</dt>
-  <dd>Remplace le fichier ouvert par la version signée. Le navigateur vous demande l’autorisation la première fois. Ce bouton n’est actif que si toutes ces conditions sont réunies&#8239;:
-    <ul>
-      <li>votre navigateur sait écrire dans les fichiers locaux (fonction <em>File System Access</em>&#8239;: Chrome, Edge et les autres navigateurs basés sur Chromium sur ordinateur&#8239;; ni Firefox, ni Safari, ni la plupart des téléphones)&#8239;;</li>
-      <li>le fichier a été ouvert avec le bouton <em>Ouvrir</em>, ou déposé sur la page dans un tel navigateur (WebSign sait alors où il se trouve)&#8239;;</li>
-      <li>le format choisi est celui de l’original (PDF vers PDF, PNG vers PNG, JPG vers JPG). Un PDF de plusieurs pages ne peut donc être écrasé qu’en PDF, puisque PNG et JPG ne contiennent qu’une page.</li>
-    </ul>
-    Sinon, le bouton est grisé et une courte ligne en dessous en donne la raison. WebSign ne remplace jamais un écrasement par un téléchargement sans vous le dire.</dd>
-  <dt>Annuler</dt>
-  <dd>Ferme la fenêtre sans enregistrer.</dd>
-</dl>
-<p>Vous pouvez enregistrer plusieurs fois de suite sans risque&#8239;: WebSign repart toujours du contenu d’origine, non signé, lu à l’ouverture du fichier&#8239;; la signature n’est donc jamais apposée deux fois. Gardez cependant à l’esprit qu’après un écrasement, le fichier sur votre disque contient définitivement la signature&#8239;: si vous le rouvrez plus tard, elle fait partie du document.</p>
+<h3 id="enregistrer-sous">Enregistrer</h3>
+<p><strong>Enregistrer</strong> crée un nouveau fichier portant le nom de l’original suivi de <code>-signed</code> (par exemple <code>contrat-signed.pdf</code>)&#8239;; le fichier d’origine n’est jamais modifié.</p>
+<ul>
+  <li>Dans Chrome et Edge sur ordinateur, la fenêtre «&#8239;Enregistrer sous&#8239;» du navigateur vous laisse choisir le dossier et le nom.</li>
+  <li>Dans les autres navigateurs, une petite fenêtre <strong>Enregistrer sous</strong> vous demande le nom du fichier&#8239;: saisissez-le et touchez <strong>Enregistrer</strong>. Le navigateur place alors le fichier dans votre dossier de téléchargements, ou vous demande où l’enregistrer, selon ses réglages (dans Firefox et Safari, vous pouvez activer «&#8239;Toujours demander où enregistrer les fichiers&#8239;»). Sur téléphone et tablette, un bouton <strong>Partager…</strong> peut aussi être proposé&#8239;: sur iPhone et iPad, choisissez <strong>Enregistrer dans Fichiers</strong> pour choisir vous-même le dossier.</li>
+</ul>
+<p>Le bouton <strong>Enregistrer la signature</strong> fonctionne de la même façon, avec le nom <code>signature.png</code>.</p>
+<p>Vous pouvez enregistrer plusieurs fois de suite sans risque&#8239;: WebSign repart toujours du contenu d’origine, non signé, lu à l’ouverture du fichier&#8239;; la signature n’est donc jamais apposée deux fois.</p>
 <p>Si vous quittez ou rechargez la page alors qu’une signature n’a pas été enregistrée, le navigateur vous demande de confirmer.</p>
 
 <h2 id="daltonisme">Couleurs adaptées au daltonisme</h2>
@@ -462,7 +454,7 @@ doc/doc_fr.html       ce guide en français</code></pre>
   <li><strong>Formulaires et annotations</strong> sont affichés tels qu’ils apparaissent dans le PDF, mais ne peuvent pas être remplis.</li>
   <li><strong>Les exports PNG et JPG ne contiennent qu’une page.</strong> Choisissez PDF pour conserver toutes les pages.</li>
   <li><strong>Les très grandes pages ou images</strong> sont réduites si nécessaire pour respecter les limites des navigateurs (environ 16&#8239;mégapixels).</li>
-  <li><strong>Navigateurs.</strong> WebSign a été testé avec Chrome sur ordinateur et en émulation de téléphone. Il est conçu pour les versions récentes de Chrome, Edge, Firefox et Safari, sur ordinateur comme sur téléphone, mais ces autres navigateurs n’ont pas tous été testés. Écraser le fichier d’origine nécessite Chrome ou Edge sur ordinateur.</li>
+  <li><strong>Navigateurs.</strong> WebSign a été testé avec Chrome sur ordinateur et en émulation de téléphone. Il est conçu pour les versions récentes de Chrome, Edge, Firefox et Safari, sur ordinateur comme sur téléphone, mais ces autres navigateurs n’ont pas tous été testés. Dans DuckDuckGo pour Android, le nom du fichier enregistré est choisi par le navigateur.</li>
 </ul>
 
 <h2 id="licences">Licences</h2>
@@ -475,15 +467,13 @@ doc/doc_fr.html       ce guide en français</code></pre>
 
 <h2 id="faq">Questions fréquentes</h2>
 <dl>
-  <dt>Rien n’est enregistré dans DuckDuckGo (ou un autre navigateur) sur Android.</dt>
-  <dd>Certains navigateurs Android basés sur la «&#8239;WebView&#8239;» du système, comme DuckDuckGo, ne savent pas enregistrer les fichiers créés par une page web, et aucune page ne peut contourner cette limite. La fenêtre <strong>Enregistrer sous</strong> affiche alors un avertissement et, pour les images, l’image elle-même&#8239;: un appui long dessus peut proposer de l’enregistrer. <strong>Ouvrir dans un nouvel onglet</strong> affiche le fichier dans un nouvel onglet, où la visionneuse du navigateur peut permettre de l’enregistrer. Sinon, ouvrez WebSign dans Chrome ou Firefox pour Android, où l’enregistrement fonctionne.</dd>
-  <dt>«&#8239;Écraser l’original&#8239;» échoue sur Android.</dt>
-  <dd>Chrome pour Android refuse parfois de remplacer un fichier qui a changé sur le téléphone après son ouverture. WebSign réessaie une fois&#8239;; en cas de nouvel échec, il l’indique et ouvre la fenêtre <strong>Enregistrer sous</strong> avec le fichier signé prêt, pour en enregistrer une copie.</dd>
+  <dt>Dans DuckDuckGo pour Android, le fichier enregistré porte un autre nom.</dt>
+  <dd>DuckDuckGo pour Android enregistre bien le fichier, mais choisit lui-même son nom, sans tenir compte de celui que vous avez saisi&#8239;; aucune page web ne peut changer cela. Renommez le fichier dans votre application Fichiers, ou utilisez Chrome ou Firefox pour Android, qui conservent votre nom.</dd>
+  <dt>Rien n’est enregistré dans mon navigateur Android.</dt>
+  <dd>Quelques navigateurs Android ne savent pas enregistrer les fichiers créés par une page web. La fenêtre <strong>Enregistrer sous</strong> affiche alors un avertissement et, pour les images, l’image elle-même&#8239;: un appui long dessus peut proposer de l’enregistrer. Sinon, ouvrez WebSign dans Chrome ou Firefox pour Android.</dd>
   <dt>Mon document est-il envoyé quelque part&#8239;?</dt>
   <dd>Non. Tout se passe dans votre navigateur. Vous pouvez le vérifier en coupant Internet après avoir ouvert la page&#8239;: WebSign continue de fonctionner.</dd>
-  <dt>Pourquoi «&#8239;Écraser l’original&#8239;» est-il grisé&#8239;?</dt>
-  <dd>La ligne sous les boutons en donne la raison&#8239;: votre navigateur ne sait pas écrire dans les fichiers locaux, l’emplacement du fichier est inconnu, ou le format choisi diffère de l’original. Utilisez plutôt <em>Créer une copie</em>.</dd>
-  <dt>Où ma copie est-elle enregistrée&#8239;?</dt>
+  <dt>Où mon fichier est-il enregistré&#8239;?</dt>
   <dd>Dans Chrome et Edge, là où vous le choisissez dans la fenêtre «&#8239;Enregistrer sous&#8239;». Dans les autres navigateurs, après avoir touché <strong>Enregistrer</strong> dans la fenêtre <strong>Enregistrer sous</strong>&#8239;: dans votre dossier de téléchargements, sauf si le navigateur est réglé pour demander où enregistrer chaque fichier (sur iPhone, dans l’app Fichiers, rubrique Téléchargements).</dd>
   <dt>Ma signature paraît étirée.</dt>
   <dd>La signature suit la forme du cadre. Redonnez au cadre ses proportions précédentes, ou effacez et signez à nouveau.</dd>

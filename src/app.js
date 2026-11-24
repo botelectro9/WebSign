@@ -34,13 +34,12 @@
   const $ = (id) => document.getElementById(id);
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
-  const hasFsAccess = typeof window.showOpenFilePicker === 'function';
 
   // ---------------------------------------------------------------------------
   // State
   // ---------------------------------------------------------------------------
   const state = {
-    doc: null,        // { kind, name, type, bytes, handle, pdf, pages[], image }
+    doc: null,        // { kind, name, type, bytes, pdf, pages[], image }
     box: null,        // { page, x, y, w, h }  all in fractions of the page
     strokes: [],      // immutable [{ color, width, points:[{x,y}] }], points in box fractions
     color: '#000000',
@@ -62,11 +61,11 @@
     penPop: $('pen-pop'), dropOverlay: $('drop-overlay'),
     tbVision: $('tb-vision'), visionMenu: $('vision-menu'),
     saveDlg: $('save-dlg'), saveForm: $('save-form'), saveNote: $('save-note'), saveOutline: $('save-outline'),
-    saveCopy: $('save-copy'), saveShare: $('save-share'), saveOpen: $('save-open'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
+    saveCopy: $('save-copy'), saveShare: $('save-share'), saveCancel: $('save-cancel'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
     readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
-    readyName: $('ready-name'), readyExt: $('ready-ext'), readyOpen: $('ready-open'),
+    readyName: $('ready-name'), readyExt: $('ready-ext'),
     readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
@@ -207,7 +206,7 @@
     return state.dirty && (state.box !== null || state.strokes.length > 0);
   }
 
-  async function openFile(file, handle = null) {
+  async function openFile(file) {
     if (!file) return;
     if (state.doc && hasWork()) {
       const ok = await confirmDialog(t('confirm.text', { name: file.name }));
@@ -219,7 +218,7 @@
       const bytes = new Uint8Array(await file.arrayBuffer());
       const sniff = sniffType(bytes, file);
       if (!sniff) throw new UserError(t('err.unsupported'));
-      const doc = { kind: sniff.kind, type: sniff.type, name: file.name || 'document', bytes, handle, pages: [] };
+      const doc = { kind: sniff.kind, type: sniff.type, name: file.name || 'document', bytes, pages: [] };
       if (sniff.kind === 'pdf') await loadPdfDoc(doc, done);
       else await loadImageDoc(doc, file);
       if (token !== openToken) { closeDocObjects(doc); return; }
@@ -955,39 +954,11 @@
   // ---------------------------------------------------------------------------
   // Opening: start screen button, drag and drop
   // ---------------------------------------------------------------------------
-  els.openBtn.addEventListener('click', async () => {
-    if (hasFsAccess) {
-      let handle;
-      try {
-        [handle] = await window.showOpenFilePicker({
-          multiple: false,
-          types: [{
-            description: t('picker.desc'),
-            accept: {
-              'application/pdf': ['.pdf'],
-              'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.avif', '.svg'],
-            },
-          }],
-        });
-      } catch (e) {
-        if (e && e.name === 'AbortError') return;
-        console.warn('showOpenFilePicker failed, using the file input instead:', e);
-        els.fileInput.click();
-        return;
-      }
-      try {
-        openFile(await handle.getFile(), handle);
-      } catch (e) {
-        toast(t('err.read', { error: errorMessage(e) }), true);
-      }
-      return;
-    }
-    els.fileInput.click();
-  });
+  els.openBtn.addEventListener('click', () => els.fileInput.click());
   els.fileInput.addEventListener('change', () => {
     const f = els.fileInput.files && els.fileInput.files[0];
     els.fileInput.value = '';
-    if (f) openFile(f, null);
+    if (f) openFile(f);
   });
 
   let dragDepth = 0;
@@ -1016,15 +987,8 @@
     els.dropOverlay.hidden = true;
     els.dropzone.classList.remove('over');
     const item = e.dataTransfer.items && [...e.dataTransfer.items].find((i) => i.kind === 'file');
-    // Both calls must happen synchronously inside the drop event.
-    const handlePromise = item && typeof item.getAsFileSystemHandle === 'function' ? item.getAsFileSystemHandle() : null;
     const file = item ? item.getAsFile() : (e.dataTransfer.files && e.dataTransfer.files[0]);
-    let handle = null;
-    if (handlePromise) {
-      try { handle = await handlePromise; } catch (err) { handle = null; }
-      if (handle && handle.kind !== 'file') handle = null;
-    }
-    if (file) openFile(file, handle);
+    if (file) openFile(file);
   });
 
   // ---------------------------------------------------------------------------
@@ -1100,15 +1064,6 @@
     return cleaned.slice(0, 120) || fallback;
   }
 
-  // Opens the file in a new tab (blob: URL; data: URLs cannot be opened as a page). The URL
-  // is kept alive so the browser's viewer can still save it later. `win` is a tab opened
-  // beforehand, during the click, when the file had to be built first.
-  function openInNewTab(blob, win) {
-    const url = URL.createObjectURL(blob);
-    if (win && !win.closed) { win.location.href = url; return true; }
-    return !!window.open(url, '_blank');
-  }
-
   async function offerDownload(blob, name) {
     const dot = name.lastIndexOf('.');
     const ext = dot > 0 ? name.slice(dot) : '';
@@ -1124,7 +1079,13 @@
       const n = fileName().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_');
       return /^[_ .]*$/.test(n.slice(0, -ext.length || undefined)) ? defaultBase + ext : n;
     };
-    const syncName = () => { link.download = asciiName(); };
+    // Android: the name also goes into the data: URL as a "name" parameter. WebView
+    // browsers do not pass the download attribute to their downloader, so this is the only
+    // other place a downloader may find it (whether it is used is up to the browser).
+    const syncName = () => {
+      link.download = asciiName();
+      if (webView) link.href = url.replace(/;base64,/, `;name=${encodeURIComponent(link.download)};base64,`);
+    };
     link.href = url;
     els.readyName.value = defaultBase;
     els.readyExt.textContent = ext;
@@ -1134,7 +1095,6 @@
     // save page-made files at all: say so, and offer the image itself, which their
     // long-press menu can sometimes save.
     const limited = webView && !shareable;
-    els.readyOpen.hidden = !limited;
     els.readyHint.hidden = !limited;
     els.readyPreview.hidden = !(limited && /^image\//.test(blob.type));
     els.readyImg.src = els.readyPreview.hidden ? '' : url;
@@ -1162,12 +1122,6 @@
           if (!e || e.name !== 'AbortError') toast(t('err.share', { error: errorMessage(e) }), true);
         }
       };
-      // Open in new tab: lets the browser's own viewer (PDF viewer, image) save the file.
-      const onOpen = () => {
-        if (openInNewTab(blob)) { saved = true; toastMsg = t('toast.opened'); els.readyDlg.close('opened'); }
-        else toast(t('err.popup'), true);
-      };
-      els.readyOpen.addEventListener('click', onOpen);
       // Enter in the name field saves, like the main button.
       const onKey = (e) => {
         if (e.key === 'Enter') { e.preventDefault(); syncName(); link.click(); }
@@ -1182,7 +1136,6 @@
         els.readyName.removeEventListener('keydown', onKey);
         link.removeEventListener('click', onClick);
         els.readyShare.removeEventListener('click', onShare);
-        els.readyOpen.removeEventListener('click', onOpen);
         if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
         link.href = '#';
         els.readyImg.removeAttribute('src');
@@ -1459,23 +1412,10 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Save dialog: Overwrite original / Create a copy / Cancel
+  // Save dialog: format, outline, then Cancel / Share… (Android) / Save
   // ---------------------------------------------------------------------------
   function selectedFormat() {
     return els.saveForm.elements.fmt.value;
-  }
-
-  function overwriteStatus(fmt) {
-    const doc = state.doc;
-    if (!hasFsAccess) return { ok: false, reason: t('reason.unsupported') };
-    if (!doc.handle || typeof doc.handle.createWritable !== 'function') {
-      return { ok: false, reason: t('reason.noHandle') };
-    }
-    if (doc.type !== fmt) {
-      const orig = FORMAT_INFO[doc.type] ? FORMAT_INFO[doc.type].label : t('reason.otherFormat');
-      return { ok: false, reason: t('reason.format', { format: orig }) };
-    }
-    return { ok: true, reason: '' };
   }
 
   function refreshSaveDialog() {
@@ -1485,16 +1425,8 @@
     els.saveNote.textContent = fmt !== 'pdf' && n > 1
       ? t(state.box ? 'save.notePageBox' : 'save.notePage', { n: exportPageIndex() + 1, total: n })
       : '';
-    const ow = overwriteStatus(fmt);
-    els.saveOverwrite.disabled = !ow.ok;
-    // Share… is offered on Android only; disabled with a reason where files cannot be shared.
-    const android = isAndroid();
-    const sharing = android && canShareType(FORMAT_INFO[fmt].mime, fmt);
-    // Where files cannot be shared, Open in new tab takes its place (the browser's viewer
-    // can then save the file, e.g. DuckDuckGo's PDF viewer).
-    els.saveShare.hidden = !sharing;
-    els.saveOpen.hidden = !(android && !sharing);
-    els.saveReason.textContent = ow.reason;
+    // Share… on Android, where the browser can share files (Drive, Files, mail…).
+    els.saveShare.hidden = !(isAndroid() && canShareType(FORMAT_INFO[fmt].mime, fmt));
     els.saveOutline.disabled = !state.box;
   }
 
@@ -1535,89 +1467,12 @@
       }
     });
   });
-  els.saveOpen.addEventListener('click', () => {
-    const fmt = selectedFormat();
-    const outline = els.saveOutline.checked && !!state.box;
-    const name = `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`;
-    // Open the tab now, while the tap still counts, and fill it once the file is built.
-    const win = window.open('', '_blank');
-    els.saveDlg.close('open');
-    runSave(async () => {
-      let blob;
-      try {
-        blob = await buildExport(fmt, outline);
-      } catch (e) {
-        if (win) win.close();
-        throw e;
-      }
-      if (win && openInNewTab(blob, win)) { savedToast(t('toast.opened')); return true; }
-      return offerDownload(blob, name); // tab blocked: the Save as window has its own button
-    });
-  });
   els.saveCopy.addEventListener('click', () => {
     const fmt = selectedFormat();
     const outline = els.saveOutline.checked && !!state.box;
     els.saveDlg.close('copy');
     runSave(() => saveAsCopy(() => buildExport(fmt, outline), `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`, fmt));
   });
-  els.saveOverwrite.addEventListener('click', () => {
-    const fmt = selectedFormat();
-    const outline = els.saveOutline.checked && !!state.box;
-    if (!overwriteStatus(fmt).ok) return;
-    const handle = state.doc.handle;
-    // Ask for write permission right away, inside the click's user activation.
-    const permission = requestWritePermission(handle);
-    els.saveDlg.close('overwrite');
-    runSave(async () => {
-      if ((await permission) !== 'granted') {
-        toast(t('err.permission'), true);
-        return false;
-      }
-      const blob = await buildExport(fmt, outline);
-      const write = async () => {
-        const w = await handle.createWritable();
-        try {
-          await w.write(blob);
-          await w.close();
-        } catch (e) {
-          if (typeof w.abort === 'function') w.abort().catch(() => {});
-          throw e;
-        }
-      };
-      try {
-        await write();
-      } catch (e) {
-        // Chrome for Android reports InvalidStateError / NotReadableError when the file on
-        // the phone changed since it was opened (for example after a first overwrite).
-        // Refresh the handle's view of the file and try once more.
-        if (!e || !/InvalidState|NotReadable|NoModificationAllowed/.test(e.name)) throw e;
-        try {
-          await handle.getFile();
-          await write();
-        } catch (e2) {
-          console.warn('Overwrite failed:', e2);
-          toast(t('err.overwriteChanged'), true);
-          return offerDownload(blob, `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`);
-        }
-      }
-      // state.doc.bytes deliberately stays the ORIGINAL unsigned file for this session,
-      // so saving again re-stamps the same signature once instead of twice.
-      savedToast(t('toast.overwrote', { name: handle.name || state.doc.name }));
-      return true;
-    });
-  });
-
-  async function requestWritePermission(handle) {
-    const opts = { mode: 'readwrite' };
-    try {
-      if (typeof handle.queryPermission === 'function' && (await handle.queryPermission(opts)) === 'granted') return 'granted';
-      if (typeof handle.requestPermission === 'function') return await handle.requestPermission(opts);
-      return 'granted'; // no permission API: createWritable() will fail if not allowed
-    } catch (e) {
-      console.warn('requestPermission failed:', e);
-      return 'denied';
-    }
-  }
 
   async function runSave(fn) {
     const done = busy(t('busy.saving'));

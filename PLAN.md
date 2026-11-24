@@ -199,3 +199,12 @@ of the page) have the same choice as a drop-down. The choice is stored in `local
 synced across open tabs. Protanopia/deuteranopia use navy / yellow / blue, tritanopia uses
 neutral dark / cyan / coral red; all text pairs ≥ 6.3:1. With a non-normal palette, ink
 swatches show their names. Documents and ink colours are never changed.
+
+## Simplification (after testing on Android)
+
+*Overwrite original* and *Open in new tab* were removed at the user's request. The save
+window has **Cancel**, **Save** (formerly *Create a copy*) and, on Android when the browser
+can share files, **Share…**. Files are opened with a plain file input (no file handles).
+DuckDuckGo for Android saves the file but chooses its own name (its WebView downloader does
+not receive the `download` attribute); the name is also passed as a `name=` parameter in
+the data: URL in case a downloader reads it.

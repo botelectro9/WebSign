@@ -31,15 +31,11 @@ place a signature box, sign inside it with your mouse or your finger, and save t
 7. **Save the signature** — saves the content of the box as a transparent PNG.
 8. **Save the document** — choose PDF, PNG or JPG, optionally tick *Keep the box outline
    visible*, then:
-   - **Overwrite original** — replaces the file you opened (Chrome or Edge on a computer
-     only, and only in the original format; otherwise the button is greyed out with the reason);
-   - **Create a copy** — saves `<name>-signed.pdf|png|jpg` (you choose the folder in
-     Chrome/Edge; in other browsers a small **Save as** window asks for the file name, tap
-     **Save** and it goes to your downloads folder or wherever the browser asks; on
-     phones, **Share…** → *Save to Files* (iOS) lets you pick the folder);
-   - **Share…** (Android only) — sends the signed file to another app (Drive, Files, mail…);
-     where sharing is unavailable (DuckDuckGo), **Open in new tab** instead, to save it from
-     the browser’s viewer;
+   - **Save** — saves `<name>-signed.pdf|png|jpg`, never touching the original. Chrome/Edge
+     on a computer show their own "Save as" window; other browsers show a small **Save as**
+     window asking for the file name (DuckDuckGo for Android then picks its own name);
+   - **Share…** (Android, when the browser can share files) — sends the signed file to
+     another app (Drive, Files, mail…);
    - **Cancel**.
 
    PDF keeps all pages of the original (text stays selectable); PNG and JPG contain the
@@ -90,17 +86,12 @@ doigt, puis enregistrez le résultat.
 7. **Enregistrer la signature** — enregistre le contenu du cadre en PNG transparent.
 8. **Enregistrer le document** — choisissez PDF, PNG ou JPG, cochez si besoin *Garder le
    contour du cadre visible*, puis&nbsp;:
-   - **Écraser l’original** — remplace le fichier ouvert (uniquement avec Chrome ou Edge
-     sur ordinateur, et dans le format d’origine&nbsp;; sinon le bouton est grisé et la
-     raison est indiquée)&nbsp;;
-   - **Créer une copie** — enregistre `<nom>-signed.pdf|png|jpg` (vous choisissez le
-     dossier dans Chrome/Edge&nbsp;; dans les autres navigateurs, une petite fenêtre
-     **Enregistrer sous** demande le nom du fichier, touchez **Enregistrer** et il va dans
-     vos téléchargements ou là où le navigateur le demande&nbsp;; sur téléphone,
-     **Partager…** → *Enregistrer dans Fichiers* (iOS) permet de choisir le dossier)&nbsp;;
-   - **Partager…** (Android uniquement) — envoie le fichier signé vers une autre application&nbsp;;
-     si le partage est indisponible (DuckDuckGo), **Ouvrir dans un nouvel onglet** à la place,
-     pour l’enregistrer depuis la visionneuse du navigateur&nbsp;;
+   - **Enregistrer** — enregistre `<nom>-signed.pdf|png|jpg`, sans jamais modifier l’original.
+     Chrome/Edge sur ordinateur affichent leur propre fenêtre «&nbsp;Enregistrer sous&nbsp;»&nbsp;;
+     les autres navigateurs affichent une petite fenêtre **Enregistrer sous** qui demande le
+     nom du fichier (DuckDuckGo pour Android choisit alors son propre nom)&nbsp;;
+   - **Partager…** (Android, si le navigateur sait partager des fichiers) — envoie le fichier
+     signé vers une autre application (Drive, Fichiers, messagerie…)&nbsp;;
    - **Annuler**.
 
    Le PDF conserve toutes les pages de l’original (le texte reste sélectionnable)&nbsp;;
@@ -178,7 +169,7 @@ It covers the i18n dictionary (same keys, no empty or untranslated strings), the
 both app pages: PDF with a rotated page and CropBox offsets, PNG, password-protected PDF
 (fixture made with `qpdf` if installed), box gestures with mouse and emulated touch,
 undo/redo, every export (the signed PDF is re-rendered to check the ink position and
-orientation), overwrite/copy with a stubbed in-memory File System Access API (the native
+orientation), saving through a stubbed `showSaveFilePicker` (the native
 pickers cannot be automated), `beforeunload`, and zero console errors / network requests.
 
 ### GitHub Pages
