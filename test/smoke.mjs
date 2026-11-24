@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { deflateSync, crc32 } from 'node:zlib';
+import { execFileSync } from 'node:child_process';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -97,6 +98,11 @@ function makePng(w, h) {
 const pdfBytes = Buffer.from(await makePdf());
 const pdfPath = join(work, 'sample.pdf');
 writeFileSync(pdfPath, pdfBytes);
+let encPath = null;
+try {
+  encPath = join(work, 'protected.pdf');
+  execFileSync('qpdf', ['--encrypt', 'secret', 'owner-secret', '256', '--', pdfPath, encPath]);
+} catch (e) { encPath = null; }
 const pngBytes = makePng(900, 560);
 const pngPath = join(work, 'photo.png');
 writeFileSync(pngPath, pngBytes);
@@ -632,6 +638,47 @@ async function appSuite(lang) {
   await page.click('#app-home');
   await sleep(500);
   check(unloadDialog === 'beforeunload' && page.url() === URL_, `leaving with unsaved work asks first (${unloadDialog})`);
+  // --- password-protected PDF (needs qpdf to create the fixture) ---
+  if (encPath) {
+    const ep = await ctx.newPage();
+    watch(ep, 'encrypted');
+    await ep.goto(URL_);
+    const [ch] = await Promise.all([ep.waitForEvent('filechooser'), ep.click('#open-btn')]);
+    await ch.setFiles(encPath);
+    await ep.waitForSelector('#pwd-dlg[open]');
+    check((await ep.textContent('#pwd-note')) === await tr(ep, 'pwd.prompt'), 'password prompt shown for an encrypted PDF');
+    await ep.fill('#pwd-input', 'wrong');
+    await ep.keyboard.press('Enter');
+    await ep.waitForFunction((msg) => document.getElementById('pwd-dlg').open && document.getElementById('pwd-note').textContent === msg, await tr(ep, 'pwd.incorrect'));
+    check(true, 'wrong password: asked again');
+    await ep.fill('#pwd-input', 'secret');
+    await ep.click('#pwd-dlg button[value=ok]');
+    await waitRendered(ep, 0);
+    check((await ep.evaluate(() => window.__websign.pageCount)) === 2, 'encrypted PDF opened with the password');
+    await ep.click('#tb-box');
+    await pickColor(ep, 'color.red');
+    await mouseSign(ep);
+    const ebox = await ep.evaluate(() => window.__websign.box);
+    const encOut = await downloadFrom(ep, () => saveCopy(ep, 'pdf', false));
+    await ep.waitForFunction((msg) => document.getElementById('toast').textContent.includes(msg), await tr(ep, 'toast.rasterised'));
+    const ei = await pdfInfo(encOut.bytes);
+    check(ei.pages === 2 && ei.images[0] === 2 && ei.images[1] === 1, `encrypted PDF exported as page images + signature, user told (${ei.images})`);
+    an = await analyseExportedPdf(browser, encOut.bytes, 0, ebox);
+    check(an.tl > 100 && an.br === 0 && an.outside === 0, `rasterised export: ink in place (tl=${an.tl})`);
+    // cancelling the password prompt abandons the opening quietly
+    const cp = await ctx.newPage();
+    watch(cp, 'encrypted-cancel');
+    await cp.goto(URL_);
+    const [ch2] = await Promise.all([cp.waitForEvent('filechooser'), cp.click('#open-btn')]);
+    await ch2.setFiles(encPath);
+    await cp.waitForSelector('#pwd-dlg[open]');
+    await cp.click('#pwd-cancel');
+    await sleep(500);
+    check((await cp.evaluate(() => window.__websign.pageCount)) === 0 && (await cp.isVisible('#start')) && !(await cp.evaluate(() => document.getElementById('toast').classList.contains('show'))),
+      'cancelling the password prompt returns to the start screen without error');
+  } else {
+    check(true, 'SKIPPED encrypted-PDF test (qpdf not found)');
+  }
   await ctx.close();
 
   // =========================================================================

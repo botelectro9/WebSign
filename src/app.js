@@ -828,6 +828,7 @@
     const open = pop.hidden;
     closePopovers();
     if (!open) return;
+    els.toast.classList.remove('show');
     positionPopover(pop, btn);
     btn.setAttribute('aria-expanded', 'true');
     const f = pop.querySelector(focusSel);
@@ -1056,10 +1057,10 @@
       const w = await handle.createWritable();
       await w.write(blob);
       await w.close();
-      toast(t('toast.saved', { name: handle.name || name }));
+      savedToast(t('toast.saved', { name: handle.name || name }));
     } else {
       download(blob, name);
-      toast(t('toast.downloaded', { name }));
+      savedToast(t('toast.downloaded', { name }));
     }
     return true;
   }
@@ -1245,7 +1246,7 @@
         await stampPdfPage(PDFLib, out, page, flatCorners(state.box, p.baseW, p.baseH), withOutline);
       }
     }
-    toast(t('toast.rasterised'), true);
+    exportNotice = t('toast.rasterised');
     return out.save();
   }
 
@@ -1277,7 +1278,16 @@
     return 1;
   }
 
+  // Set by an export that had to deviate from the normal path (raster fallback); shown
+  // together with the success message so it is not overwritten by it.
+  let exportNotice = null;
+  function savedToast(msg) {
+    toast(exportNotice ? `${msg}. ${exportNotice}` : msg, !!exportNotice);
+    exportNotice = null;
+  }
+
   async function buildExport(fmt, withOutline) {
+    exportNotice = null;
     if (fmt === 'pdf') return new Blob([await exportPdf(withOutline)], { type: 'application/pdf' });
     return exportImage(fmt, withOutline);
   }
@@ -1358,7 +1368,7 @@
       }
       // state.doc.bytes deliberately stays the ORIGINAL unsigned file for this session,
       // so saving again re-stamps the same signature once instead of twice.
-      toast(t('toast.overwrote', { name: handle.name || state.doc.name }));
+      savedToast(t('toast.overwrote', { name: handle.name || state.doc.name }));
       return true;
     });
   });

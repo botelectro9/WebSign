@@ -87,9 +87,10 @@
     <h2 id="pwd-title" data-i18n="pwd.title"></h2>
     <p class="note" id="pwd-note"></p>
     <input type="password" id="pwd-input" class="field" autocomplete="off" data-i18n-aria="pwd.input">
-    <div class="actions">
-      <button type="submit" class="btn" id="pwd-cancel" value="cancel" data-i18n="pwd.cancel"></button>
+    <!-- "Open" comes first in the DOM so that Enter (implicit submission) opens; shown on the right -->
+    <div class="actions reverse">
       <button type="submit" class="btn primary" value="ok" data-i18n="pwd.open"></button>
+      <button type="submit" class="btn" id="pwd-cancel" value="cancel" data-i18n="pwd.cancel"></button>
     </div>
   </form>
 </dialog>

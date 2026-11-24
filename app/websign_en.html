@@ -96,6 +96,13 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; line-height: 1.2; }
 .btn.small { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
+a.btn { color: var(--text); }
+a.btn.primary { color: var(--accent-text); }
+.bar .btn, .bar-link { white-space: nowrap; }
+@media (max-width: 420px) {
+  .bar { gap: 6px; }
+  .brand-link span { display: none; }
+}
 /* ---------- start screen ---------- */
 .viewer { min-height: 100%; }
 .start {
@@ -286,7 +293,7 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 .dlg {
   border: 1px solid var(--line); border-radius: 18px;
   background: var(--surface); color: var(--text);
-  padding: 22px; width: min(400px, calc(100vw - 32px));
+  padding: 22px; width: min(480px, calc(100vw - 32px));
   box-shadow: var(--shadow);
 }
 .dlg::backdrop { background: rgba(10, 12, 16, 0.45); }
@@ -321,7 +328,7 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 }
 .drop-overlay div { padding: 12px 20px; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); font-weight: 600; }
 .busy {
-  position: fixed; z-index: 60; left: 50%; top: calc(18px + var(--safe-t)); transform: translateX(-50%);
+  position: fixed; z-index: 60; left: 50%; top: calc(64px + var(--safe-t)); transform: translateX(-50%);
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; border-radius: 999px;
   background: var(--surface); box-shadow: var(--shadow); font-size: 14px;
@@ -333,8 +340,8 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .toast {
-  position: fixed; z-index: 70; left: 50%; bottom: calc(84px + var(--safe-b));
-  transform: translate(-50%, 12px);
+  position: fixed; z-index: 70; left: 50%; top: calc(64px + var(--safe-t));
+  transform: translate(-50%, -8px);
   max-width: min(460px, calc(100vw - 24px));
   padding: 10px 16px; border-radius: 12px;
   background: #15181d; color: #fff; font-size: 14px; text-align: center;
@@ -352,11 +359,12 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 .reason { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); text-align: right; }
 .reason:empty { display: none; }
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .save-actions { flex-direction: column-reverse; align-items: stretch; }
   .reason { text-align: center; }
 }
 .sigbox, .sigbox * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.actions.reverse { flex-direction: row-reverse; justify-content: flex-start; }
 </style>
 </head>
 <body>
@@ -450,9 +458,10 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
     <h2 id="pwd-title" data-i18n="pwd.title">Password required</h2>
     <p class="note" id="pwd-note"></p>
     <input type="password" id="pwd-input" class="field" autocomplete="off" data-i18n-aria="pwd.input" aria-label="Password">
-    <div class="actions">
-      <button type="submit" class="btn" id="pwd-cancel" value="cancel" data-i18n="pwd.cancel">Cancel</button>
+    <!-- "Open" comes first in the DOM so that Enter (implicit submission) opens; shown on the right -->
+    <div class="actions reverse">
       <button type="submit" class="btn primary" value="ok" data-i18n="pwd.open">Open</button>
+      <button type="submit" class="btn" id="pwd-cancel" value="cancel" data-i18n="pwd.cancel">Cancel</button>
     </div>
   </form>
 </dialog>
@@ -27513,6 +27522,7 @@ const WEBSIGN_STRINGS = {
     const open = pop.hidden;
     closePopovers();
     if (!open) return;
+    els.toast.classList.remove('show');
     positionPopover(pop, btn);
     btn.setAttribute('aria-expanded', 'true');
     const f = pop.querySelector(focusSel);
@@ -27741,10 +27751,10 @@ const WEBSIGN_STRINGS = {
       const w = await handle.createWritable();
       await w.write(blob);
       await w.close();
-      toast(t('toast.saved', { name: handle.name || name }));
+      savedToast(t('toast.saved', { name: handle.name || name }));
     } else {
       download(blob, name);
-      toast(t('toast.downloaded', { name }));
+      savedToast(t('toast.downloaded', { name }));
     }
     return true;
   }
@@ -27930,7 +27940,7 @@ const WEBSIGN_STRINGS = {
         await stampPdfPage(PDFLib, out, page, flatCorners(state.box, p.baseW, p.baseH), withOutline);
       }
     }
-    toast(t('toast.rasterised'), true);
+    exportNotice = t('toast.rasterised');
     return out.save();
   }
 
@@ -27962,7 +27972,16 @@ const WEBSIGN_STRINGS = {
     return 1;
   }
 
+  // Set by an export that had to deviate from the normal path (raster fallback); shown
+  // together with the success message so it is not overwritten by it.
+  let exportNotice = null;
+  function savedToast(msg) {
+    toast(exportNotice ? `${msg}. ${exportNotice}` : msg, !!exportNotice);
+    exportNotice = null;
+  }
+
   async function buildExport(fmt, withOutline) {
+    exportNotice = null;
     if (fmt === 'pdf') return new Blob([await exportPdf(withOutline)], { type: 'application/pdf' });
     return exportImage(fmt, withOutline);
   }
@@ -28043,7 +28062,7 @@ const WEBSIGN_STRINGS = {
       }
       // state.doc.bytes deliberately stays the ORIGINAL unsigned file for this session,
       // so saving again re-stamps the same signature once instead of twice.
-      toast(t('toast.overwrote', { name: handle.name || state.doc.name }));
+      savedToast(t('toast.overwrote', { name: handle.name || state.doc.name }));
       return true;
     });
   });
