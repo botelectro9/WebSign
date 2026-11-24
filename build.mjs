@@ -81,7 +81,7 @@ const libBlocks = libs
 // ---------------------------------------------------------------------------
 const CSP_APP = "default-src 'none'; script-src 'unsafe-inline' blob:; worker-src blob:; style-src 'unsafe-inline'; img-src blob: data:; font-src blob: data:; connect-src blob: data:; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
 const CSP_STATIC = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'";
-const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5bea'/%3E%3Cpath d='M7 21c3-1 4-9 6-9s1 8 3 8 2-5 4-5 1 4 3 4 2-2 2-2' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1.5l3 2.2 3.6-.6 1.6 3.3 3.4 1.4-.3 3.7 2.4 2.8-2 3.1.8 3.6-3.1 2-.7 3.6-3.7.3-2.3 2.9L16 30.5l-3.6 1.1-2.3-2.9-3.7-.3-.7-3.6-3.1-2 .8-3.6-2-3.1 2.4-2.8-.3-3.7 3.4-1.4 1.6-3.3 3.6.6z' fill='%23ec7a2f'/%3E%3Cpath d='M8.5 19.5c2.6-.8 3.4-7.5 5.2-7.5s.8 6.6 2.6 6.6 1.7-4 3.4-4 .9 3.3 2.6 3.3 1.6-1.4 1.6-1.4' fill='none' stroke='%231c0e04' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
 const ICONS = text('src/icons.svg').trim();
 const baseCss = text('src/base.css');
 

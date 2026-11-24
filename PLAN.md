@@ -157,7 +157,7 @@ add box, delete box, move, resize, stroke, erase content. New action clears redo
   separate files, no state carry-over).
 - Toasts for errors (unsupported file, password-protected PDF → prompt for password via
   pdf.js `onPassword`).
-- Responsive, respects `prefers-color-scheme`, safe-area insets on phones.
+- Responsive, dark by design ("writing desk at night": bottle-green, parchment, brass yellow, wax orange; all text pairs WCAG AA or better), safe-area insets on phones.
 - Known limits: PDFs relying on non-embedded CJK fonts / JPEG2000 / JBIG2 images may render
   imperfectly because pdf.js cmaps/wasm decoders are not bundled (export of the original
   PDF is unaffected).

@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="{{CSP}}">
 <meta name="referrer" content="no-referrer">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f241b">
 <meta name="description" content="WebSign: sign a PDF or an image in your browser. Nothing is uploaded. — Signez un PDF ou une image dans votre navigateur, sans rien envoyer.">
 <title>WebSign – Sign a PDF or an image · Signer un PDF ou une image</title>
 <link rel="icon" href="{{FAVICON}}">
@@ -16,37 +17,54 @@
 <body>
 <!-- @ICONS -->
 <main class="landing-main">
-  <div class="landing-brand">
-    <svg class="logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
-    <h1>WebSign</h1>
-  </div>
-  <p class="pitch">
-    <span lang="en">Sign a PDF or an image right in your browser: add a signature box, sign with your mouse or finger, save.</span>
-    <span lang="fr">Signez un PDF ou une image directement dans votre navigateur&#8239;: ajoutez un cadre, signez à la souris ou au doigt, enregistrez.</span>
-  </p>
-  <div class="privacy-card">
-    <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
-    <div>
-      <p lang="en"><strong>Private by design.</strong> WebSign runs entirely in your browser. Your files are never uploaded, and the page loads nothing from the web.</p>
-      <p lang="fr"><strong>Confidentiel par conception.</strong> WebSign fonctionne entièrement dans votre navigateur. Vos fichiers ne sont jamais envoyés et la page ne charge rien depuis Internet.</p>
+  <header class="landing-head">
+    <svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>
+    <span class="wordmark">WebSign</span>
+  </header>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-text">
+      <h1 id="hero-title"><span lang="en">Sign here.</span> <span lang="fr" class="fr">Signez ici.</span></h1>
+      <p lang="en">Open a PDF or a photo of a document, place a box, sign it with your mouse or your finger, and save the signed copy.</p>
+      <p lang="fr" class="fr">Ouvrez un PDF ou la photo d’un document, placez un cadre, signez à la souris ou au doigt, puis enregistrez la copie signée.</p>
     </div>
-  </div>
+    <figure class="sheet" aria-hidden="true">
+      <div class="sheet-lines"><span></span><span></span><span class="short"></span></div>
+      <div class="sign-field">
+        <span class="x">×</span>
+        <svg class="scribble" viewBox="0 0 300 90" preserveAspectRatio="xMinYMid meet">
+          <path pathLength="1" d="M8 62c14-4 22-44 34-46 10-2-2 54 10 54 11 0 15-36 27-36 9 0 2 26 12 26 12 0 16-22 26-22 8 0 4 16 12 16 9 0 13-14 21-14 7 0 4 10 11 10 9 0 14-8 22-8M60 44c40-6 110-10 190-6 18 1 30 4 40 8"/>
+        </svg>
+      </div>
+      <figcaption><span lang="en">Signature</span> / <span lang="fr">Signature</span></figcaption>
+    </figure>
+  </section>
+
   <div class="choices" id="choices">
     <section class="choice" lang="en" id="choice-en" aria-labelledby="choice-en-title">
       <h2 id="choice-en-title">English</h2>
-      <a class="btn primary big" href="app/websign_en.html" id="go-en-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Open WebSign (English)</span></a>
-      <a class="btn big" href="doc/doc_en.html" id="go-en-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Documentation (English)</span></a>
+      <a class="btn primary" href="app/websign_en.html" id="go-en-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Open WebSign</span></a>
+      <a class="btn" href="doc/doc_en.html" id="go-en-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Read the guide</span></a>
     </section>
     <section class="choice" lang="fr" id="choice-fr" aria-labelledby="choice-fr-title">
       <h2 id="choice-fr-title">Français</h2>
-      <a class="btn primary big" href="app/websign_fr.html" id="go-fr-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Ouvrir WebSign (Français)</span></a>
-      <a class="btn big" href="doc/doc_fr.html" id="go-fr-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Documentation (Français)</span></a>
+      <a class="btn primary" href="app/websign_fr.html" id="go-fr-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Ouvrir WebSign</span></a>
+      <a class="btn" href="doc/doc_fr.html" id="go-fr-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Lire le guide</span></a>
     </section>
   </div>
-  <p class="landing-foot">
-    <span lang="en">Works offline and from a local copy. Public domain (Unlicense); includes pdf.js (Apache-2.0) and pdf-lib (MIT).</span>
-    <span lang="fr">Fonctionne hors ligne et depuis une copie locale. Domaine public (Unlicense)&#8239;; intègre pdf.js (Apache-2.0) et pdf-lib (MIT).</span>
-  </p>
+
+  <section class="privacy" aria-label="Privacy / Confidentialité">
+    <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
+    <div>
+      <p lang="en">Your document never leaves your device. WebSign runs entirely in your browser: nothing is uploaded, nothing is loaded from the web, and it works offline.</p>
+      <p lang="fr" class="fr">Votre document ne quitte jamais votre appareil. WebSign fonctionne entièrement dans votre navigateur&#8239;: rien n’est envoyé, rien n’est chargé depuis Internet, et il fonctionne hors ligne.</p>
+    </div>
+  </section>
+
+  <footer class="landing-foot">
+    <p lang="en">Public domain (Unlicense). Includes pdf.js (Apache-2.0) and pdf-lib (MIT).</p>
+    <p lang="fr">Domaine public (Unlicense). Intègre pdf.js (Apache-2.0) et pdf-lib (MIT).</p>
+  </footer>
 </main>
 <script>
 // Show the browser's language first; both choices always stay available.
