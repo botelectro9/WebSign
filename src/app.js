@@ -62,11 +62,11 @@
     penPop: $('pen-pop'), dropOverlay: $('drop-overlay'),
     tbVision: $('tb-vision'), visionMenu: $('vision-menu'),
     saveDlg: $('save-dlg'), saveForm: $('save-form'), saveNote: $('save-note'), saveOutline: $('save-outline'),
-    saveCopy: $('save-copy'), saveShare: $('save-share'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
+    saveCopy: $('save-copy'), saveShare: $('save-share'), saveOpen: $('save-open'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
     readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
-    readyName: $('ready-name'), readyExt: $('ready-ext'),
+    readyName: $('ready-name'), readyExt: $('ready-ext'), readyOpen: $('ready-open'),
     readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
@@ -1100,6 +1100,15 @@
     return cleaned.slice(0, 120) || fallback;
   }
 
+  // Opens the file in a new tab (blob: URL; data: URLs cannot be opened as a page). The URL
+  // is kept alive so the browser's viewer can still save it later. `win` is a tab opened
+  // beforehand, during the click, when the file had to be built first.
+  function openInNewTab(blob, win) {
+    const url = URL.createObjectURL(blob);
+    if (win && !win.closed) { win.location.href = url; return true; }
+    return !!window.open(url, '_blank');
+  }
+
   async function offerDownload(blob, name) {
     const dot = name.lastIndexOf('.');
     const ext = dot > 0 ? name.slice(dot) : '';
@@ -1124,7 +1133,8 @@
     // Android browsers built on the WebView (DuckDuckGo…) have no share sheet and may not
     // save page-made files at all: say so, and offer the image itself, which their
     // long-press menu can sometimes save.
-    const limited = webView && typeof navigator.share !== 'function';
+    const limited = webView && !shareable;
+    els.readyOpen.hidden = !limited;
     els.readyHint.hidden = !limited;
     els.readyPreview.hidden = !(limited && /^image\//.test(blob.type));
     els.readyImg.src = els.readyPreview.hidden ? '' : url;
@@ -1152,6 +1162,12 @@
           if (!e || e.name !== 'AbortError') toast(t('err.share', { error: errorMessage(e) }), true);
         }
       };
+      // Open in new tab: lets the browser's own viewer (PDF viewer, image) save the file.
+      const onOpen = () => {
+        if (openInNewTab(blob)) { saved = true; toastMsg = t('toast.opened'); els.readyDlg.close('opened'); }
+        else toast(t('err.popup'), true);
+      };
+      els.readyOpen.addEventListener('click', onOpen);
       // Enter in the name field saves, like the main button.
       const onKey = (e) => {
         if (e.key === 'Enter') { e.preventDefault(); syncName(); link.click(); }
@@ -1166,6 +1182,7 @@
         els.readyName.removeEventListener('keydown', onKey);
         link.removeEventListener('click', onClick);
         els.readyShare.removeEventListener('click', onShare);
+        els.readyOpen.removeEventListener('click', onOpen);
         if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
         link.href = '#';
         els.readyImg.removeAttribute('src');
@@ -1473,9 +1490,11 @@
     // Share… is offered on Android only; disabled with a reason where files cannot be shared.
     const android = isAndroid();
     const sharing = android && canShareType(FORMAT_INFO[fmt].mime, fmt);
-    els.saveShare.hidden = !android;
-    els.saveShare.disabled = !sharing;
-    els.saveReason.textContent = [android && !sharing ? t('save.shareUnsupported') : '', ow.reason].filter(Boolean).join(' ');
+    // Where files cannot be shared, Open in new tab takes its place (the browser's viewer
+    // can then save the file, e.g. DuckDuckGo's PDF viewer).
+    els.saveShare.hidden = !sharing;
+    els.saveOpen.hidden = !(android && !sharing);
+    els.saveReason.textContent = ow.reason;
     els.saveOutline.disabled = !state.box;
   }
 
@@ -1516,6 +1535,25 @@
       }
     });
   });
+  els.saveOpen.addEventListener('click', () => {
+    const fmt = selectedFormat();
+    const outline = els.saveOutline.checked && !!state.box;
+    const name = `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`;
+    // Open the tab now, while the tap still counts, and fill it once the file is built.
+    const win = window.open('', '_blank');
+    els.saveDlg.close('open');
+    runSave(async () => {
+      let blob;
+      try {
+        blob = await buildExport(fmt, outline);
+      } catch (e) {
+        if (win) win.close();
+        throw e;
+      }
+      if (win && openInNewTab(blob, win)) { savedToast(t('toast.opened')); return true; }
+      return offerDownload(blob, name); // tab blocked: the Save as window has its own button
+    });
+  });
   els.saveCopy.addEventListener('click', () => {
     const fmt = selectedFormat();
     const outline = els.saveOutline.checked && !!state.box;
@@ -1536,13 +1574,31 @@
         return false;
       }
       const blob = await buildExport(fmt, outline);
-      const w = await handle.createWritable();
+      const write = async () => {
+        const w = await handle.createWritable();
+        try {
+          await w.write(blob);
+          await w.close();
+        } catch (e) {
+          if (typeof w.abort === 'function') w.abort().catch(() => {});
+          throw e;
+        }
+      };
       try {
-        await w.write(blob);
-        await w.close();
+        await write();
       } catch (e) {
-        if (typeof w.abort === 'function') w.abort().catch(() => {});
-        throw e;
+        // Chrome for Android reports InvalidStateError / NotReadableError when the file on
+        // the phone changed since it was opened (for example after a first overwrite).
+        // Refresh the handle's view of the file and try once more.
+        if (!e || !/InvalidState|NotReadable|NoModificationAllowed/.test(e.name)) throw e;
+        try {
+          await handle.getFile();
+          await write();
+        } catch (e2) {
+          console.warn('Overwrite failed:', e2);
+          toast(t('err.overwriteChanged'), true);
+          return offerDownload(blob, `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`);
+        }
       }
       // state.doc.bytes deliberately stays the ORIGINAL unsigned file for this session,
       // so saving again re-stamps the same signature once instead of twice.

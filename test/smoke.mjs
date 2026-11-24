@@ -134,7 +134,7 @@ const NO_FS_API = () => {
 const FAKE_FS = () => {
   const toB64 = (u8) => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
   const fromB64 = (b) => Uint8Array.from(atob(b), (c) => c.charCodeAt(0));
-  const fs = { files: {}, writes: [], permission: 'granted', nextOpen: null, saveCalls: 0 };
+  const fs = { files: {}, writes: [], permission: 'granted', nextOpen: null, saveCalls: 0, failWrites: 0 };
   window.__fakeFs = fs;
   const handle = (name) => ({
     kind: 'file',
@@ -143,6 +143,8 @@ const FAKE_FS = () => {
     async queryPermission() { return 'prompt'; },
     async requestPermission() { return fs.permission; },
     async createWritable() {
+      // simulates Chrome for Android when the file changed on the phone since it was opened
+      if (fs.failWrites > 0) { fs.failWrites--; throw new DOMException('An operation that depends on state cached in an interface object was made but the state had changed since it was read from disk.', 'InvalidStateError'); }
       const chunks = [];
       return {
         async write(d) { chunks.push(d instanceof Blob ? new Uint8Array(await d.arrayBuffer()) : new Uint8Array(d)); },
@@ -243,7 +245,8 @@ async function saveCopy(page, fmt, outline) {
   await page.click('#tb-save');
   await page.check(`#save-dlg input[name=fmt][value=${fmt}]`);
   if (outline) await page.check('#save-outline'); else await page.uncheck('#save-outline');
-  check(await page.isHidden('#save-share') === !(await page.evaluate(() => /Android/.test(navigator.userAgent))), 'Share… shown on Android only');
+  const android = await page.evaluate(() => /Android/.test(navigator.userAgent));
+  check((await page.isHidden('#save-share') && await page.isHidden('#save-open')) === !android, 'Share… or Open in new tab shown on Android only');
   await page.click('#save-copy');
 }
 
@@ -891,10 +894,18 @@ async function appSuite(lang) {
   await w.click('#ready-dlg button[value=cancel]');
   await w.click('#tb-save');
   await w.check('#save-dlg input[name=fmt][value=pdf]');
-  check(await w.isDisabled('#save-share') && /Share|Partager/.test(await w.textContent('#save-reason')), 'no share sheet: Share… disabled with a reason');
+  check(await w.isHidden('#save-share') && await w.isVisible('#save-open'), 'no share sheet: Open in new tab replaces Share…');
+  await w.screenshot({ path: join(SHOTS, `${lang}-android-save-open.png`) });
+  const [tab] = await Promise.all([wctx.waitForEvent('page'), w.click('#save-open')]);
+  await tab.waitForURL(/^blob:/, { timeout: 30000 });
+  const tabBytes = await w.evaluate(async (u) => { const r = await fetch(u); const b = new Uint8Array(await r.arrayBuffer()); return [r.headers.get('content-type'), String.fromCharCode(...b.slice(0, 5))]; }, tab.url());
+  check(tabBytes[0] === 'application/pdf' && tabBytes[1] === '%PDF-', `Open in new tab shows the signed PDF (${tabBytes.join(' ')})`);
+  await tab.close();
+  await w.click('#tb-save');
+  await w.check('#save-dlg input[name=fmt][value=pdf]');
   await w.click('#save-copy');
   await w.waitForSelector('#ready-dlg[open]');
-  check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview'), 'PDF: warning only, no image');
+  check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview') && await w.isVisible('#ready-open'), 'PDF: warning and Open in new tab, no image');
   await w.click('#ready-dlg button[value=cancel]');
   // download through the data: link
   const wdl = await downloadFrom(w, () => saveCopy(w, 'png', false));
@@ -949,6 +960,21 @@ async function appSuite(lang) {
   const copy = await f.evaluate(() => window.__fakeFs.writes[2]);
   check(copy.name === 'contract-signed.pdf' && (await f.evaluate(() => window.__fakeFs.saveCalls)) === 1, `Create a copy uses showSaveFilePicker (${copy.name})`);
   check(downloads === 0, 'no download fallback was used when pickers are available');
+  // overwrite when the phone reports the file changed: one retry, then a clear message + Save as window
+  await f.evaluate(() => { window.__fakeFs.failWrites = 1; });
+  await f.click('#tb-save');
+  await f.click('#save-overwrite');
+  await f.waitForFunction(() => window.__fakeFs.writes.length === 4);
+  check((await f.evaluate(() => window.__fakeFs.writes[3].name)) === 'contract.pdf', 'overwrite retried once after "file changed" error and succeeded');
+  await f.evaluate(() => { window.__fakeFs.failWrites = 2; });
+  await f.click('#tb-save');
+  await f.click('#save-overwrite');
+  await f.waitForSelector('#ready-dlg[open]', { timeout: 30000 });
+  const owMsg = await tr(f, 'err.overwriteChanged');
+  check((await f.textContent('#toast')) === owMsg && (await f.inputValue('#ready-name')) === 'contract-signed',
+    'overwrite still failing: clear message and the Save as window with the file ready');
+  await f.click('#ready-dlg button[value=cancel]');
+  check((await f.evaluate(() => window.__fakeFs.writes.length)) === 4, 'nothing written by the failed overwrite');
   // image opened through a handle: PNG overwrite allowed, JPG not
   // (a fresh page: once a document is open, the start screen's Open button is gone)
   f = await fctx.newPage();

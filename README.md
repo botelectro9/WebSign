@@ -38,6 +38,8 @@ place a signature box, sign inside it with your mouse or your finger, and save t
      **Save** and it goes to your downloads folder or wherever the browser asks; on
      phones, **Share…** → *Save to Files* (iOS) lets you pick the folder);
    - **Share…** (Android only) — sends the signed file to another app (Drive, Files, mail…);
+     where sharing is unavailable (DuckDuckGo), **Open in new tab** instead, to save it from
+     the browser’s viewer;
    - **Cancel**.
 
    PDF keeps all pages of the original (text stays selectable); PNG and JPG contain the
@@ -97,6 +99,8 @@ doigt, puis enregistrez le résultat.
      vos téléchargements ou là où le navigateur le demande&nbsp;; sur téléphone,
      **Partager…** → *Enregistrer dans Fichiers* (iOS) permet de choisir le dossier)&nbsp;;
    - **Partager…** (Android uniquement) — envoie le fichier signé vers une autre application&nbsp;;
+     si le partage est indisponible (DuckDuckGo), **Ouvrir dans un nouvel onglet** à la place,
+     pour l’enregistrer depuis la visionneuse du navigateur&nbsp;;
    - **Annuler**.
 
    Le PDF conserve toutes les pages de l’original (le texte reste sélectionnable)&nbsp;;

@@ -392,7 +392,7 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 <ol>
   <li>le <strong>format</strong>&#8239;: PDF, PNG ou JPG (présélectionné&#8239;: le format du fichier d’origine, sinon PDF)&#8239;;</li>
   <li>l’option <strong>Garder le contour du cadre visible</strong>, décochée par défaut&#8239;: si elle est cochée, un fin rectangle gris est tracé autour de la signature&#8239;;</li>
-  <li>trois boutons&#8239;: <strong>Écraser l’original</strong>, <strong>Créer une copie</strong> et <strong>Annuler</strong>&#8239;; sur Android, un quatrième bouton, <strong>Partager…</strong>, envoie le fichier signé vers une autre application (Drive, Fichiers, messagerie…). Il est grisé, avec la raison affichée, quand le navigateur ne sait pas partager de fichiers.</li>
+  <li>trois boutons&#8239;: <strong>Écraser l’original</strong>, <strong>Créer une copie</strong> et <strong>Annuler</strong>&#8239;; sur Android, un quatrième bouton, <strong>Partager…</strong>, envoie le fichier signé vers une autre application (Drive, Fichiers, messagerie…). Dans les navigateurs qui ne savent pas partager de fichiers (DuckDuckGo, par exemple), il est remplacé par <strong>Ouvrir dans un nouvel onglet</strong>, qui affiche le fichier signé dans un nouvel onglet pour l’enregistrer depuis la visionneuse du navigateur.</li>
 </ol>
 <h3>Contenu de chaque format</h3>
 <dl>
@@ -476,7 +476,9 @@ doc/doc_fr.html       ce guide en français</code></pre>
 <h2 id="faq">Questions fréquentes</h2>
 <dl>
   <dt>Rien n’est enregistré dans DuckDuckGo (ou un autre navigateur) sur Android.</dt>
-  <dd>Certains navigateurs Android basés sur la «&#8239;WebView&#8239;» du système, comme DuckDuckGo, ne savent pas enregistrer les fichiers créés par une page web, et aucune page ne peut contourner cette limite. La fenêtre <strong>Enregistrer sous</strong> affiche alors un avertissement et, pour les images, l’image elle-même&#8239;: un appui long dessus peut proposer de l’enregistrer. Pour les PDF, ouvrez WebSign dans Chrome ou Firefox pour Android, où l’enregistrement fonctionne.</dd>
+  <dd>Certains navigateurs Android basés sur la «&#8239;WebView&#8239;» du système, comme DuckDuckGo, ne savent pas enregistrer les fichiers créés par une page web, et aucune page ne peut contourner cette limite. La fenêtre <strong>Enregistrer sous</strong> affiche alors un avertissement et, pour les images, l’image elle-même&#8239;: un appui long dessus peut proposer de l’enregistrer. <strong>Ouvrir dans un nouvel onglet</strong> affiche le fichier dans un nouvel onglet, où la visionneuse du navigateur peut permettre de l’enregistrer. Sinon, ouvrez WebSign dans Chrome ou Firefox pour Android, où l’enregistrement fonctionne.</dd>
+  <dt>«&#8239;Écraser l’original&#8239;» échoue sur Android.</dt>
+  <dd>Chrome pour Android refuse parfois de remplacer un fichier qui a changé sur le téléphone après son ouverture. WebSign réessaie une fois&#8239;; en cas de nouvel échec, il l’indique et ouvre la fenêtre <strong>Enregistrer sous</strong> avec le fichier signé prêt, pour en enregistrer une copie.</dd>
   <dt>Mon document est-il envoyé quelque part&#8239;?</dt>
   <dd>Non. Tout se passe dans votre navigateur. Vous pouvez le vérifier en coupant Internet après avoir ouvert la page&#8239;: WebSign continue de fonctionner.</dd>
   <dt>Pourquoi «&#8239;Écraser l’original&#8239;» est-il grisé&#8239;?</dt>

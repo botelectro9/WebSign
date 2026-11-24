@@ -392,7 +392,7 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 <ol>
   <li>the <strong>format</strong>: PDF, PNG or JPG (preselected: the format of the original file, or PDF);</li>
   <li>the option <strong>Keep the box outline visible</strong>, unticked by default: when ticked, a thin grey rectangle is drawn around the signature;</li>
-  <li>three buttons: <strong>Overwrite original</strong>, <strong>Create a copy</strong> and <strong>Cancel</strong>; on Android, a fourth button, <strong>Share…</strong>, sends the signed file to another app (Drive, Files, mail, messaging…). It is greyed out, with the reason shown, when the browser cannot share files.</li>
+  <li>three buttons: <strong>Overwrite original</strong>, <strong>Create a copy</strong> and <strong>Cancel</strong>; on Android, a fourth button, <strong>Share…</strong>, sends the signed file to another app (Drive, Files, mail, messaging…). In browsers that cannot share files (DuckDuckGo, for example), it is replaced by <strong>Open in new tab</strong>, which shows the signed file in a new tab so you can save it from the browser’s own viewer.</li>
 </ol>
 <h3>What each format contains</h3>
 <dl>
@@ -476,7 +476,9 @@ doc/doc_fr.html       this guide in French</code></pre>
 <h2 id="faq">FAQ</h2>
 <dl>
   <dt>Nothing is saved in DuckDuckGo (or another browser) on Android.</dt>
-  <dd>Some Android browsers built on the system “WebView”, such as DuckDuckGo, cannot save files created by a web page, and no page can work around it. The <strong>Save as</strong> window then shows a warning and, for images, the image itself: a long-press on it may offer to save it. For PDFs, open WebSign in Chrome or Firefox for Android, where saving works.</dd>
+  <dd>Some Android browsers built on the system “WebView”, such as DuckDuckGo, cannot save files created by a web page, and no page can work around it. The <strong>Save as</strong> window then shows a warning and, for images, the image itself: a long-press on it may offer to save it. <strong>Open in new tab</strong> shows the file in a new tab, where the browser’s own viewer may let you save it. Otherwise, open WebSign in Chrome or Firefox for Android, where saving works.</dd>
+  <dt>“Overwrite original” fails on Android.</dt>
+  <dd>Chrome for Android sometimes refuses to replace a file that changed on the phone after it was opened. WebSign tries once more; if it still fails, it says so and opens the <strong>Save as</strong> window with the signed file ready, so you can save a copy instead.</dd>
   <dt>Is my document sent anywhere?</dt>
   <dd>No. Everything happens in your browser. You can check it by disconnecting from the Internet after opening the page: WebSign keeps working.</dd>
   <dt>Why is “Overwrite original” greyed out?</dt>
