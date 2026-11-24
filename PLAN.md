@@ -206,5 +206,7 @@ swatches show their names. Documents and ink colours are never changed.
 window has **Cancel**, **Save** (formerly *Create a copy*) and, on Android when the browser
 can share files, **Share…**. Files are opened with a plain file input (no file handles).
 DuckDuckGo for Android saves the file but chooses its own name (its WebView downloader does
-not receive the `download` attribute); the name is also passed as a `name=` parameter in
-the data: URL in case a downloader reads it.
+not receive the `download` attribute). Its `showSaveFilePicker` exists but rejects at once
+with AbortError without showing anything; a near-instant AbortError (< 600 ms) is therefore
+treated as "no picker" and the small Save as window is shown instead. (A `name=` parameter
+in the data: URL was tried and reverted: it may have broken DuckDuckGo's download.)

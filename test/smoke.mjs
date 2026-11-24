@@ -856,7 +856,7 @@ async function appSuite(lang) {
   await saveCopy(w, 'png', false);
   await w.waitForSelector('#ready-dlg[open]');
   const wHref = await w.getAttribute('#ready-link', 'href');
-  check(wHref.startsWith('data:image/png;name=photo-signed.png;base64,'), 'Android browser gets a data: link (blob: downloads unsupported in WebView browsers)');
+  check(wHref.startsWith('data:image/png;base64,'), 'Android browser gets a data: link (blob: downloads unsupported in WebView browsers)');
   check(await w.isVisible('#ready-share'), 'share button shown when files can be shared');
   await w.screenshot({ path: join(SHOTS, `${lang}-webview-ready.png`) });
   await w.click('#ready-share');
@@ -939,6 +939,17 @@ async function appSuite(lang) {
   await f.waitForFunction(() => window.__fakeFs.writes.length === 2);
   check((await f.evaluate(() => window.__fakeFs.writes[1].name)) === 'signature.png', 'Save signature also uses the Save as window');
   check(downloads === 0, 'no download fallback was used when the Save as window exists');
+  // a browser whose picker exists but answers "cancelled" at once (DuckDuckGo for Android)
+  await f.evaluate(() => { window.showSaveFilePicker = async () => { throw new DOMException('The user aborted a request.', 'AbortError'); }; });
+  await f.click('#tb-sig');
+  await f.waitForSelector('#ready-dlg[open]', { timeout: 30000 });
+  check((await f.inputValue('#ready-name')) === 'signature', 'picker that aborts at once: the Save as window asks for the name');
+  await f.click('#ready-dlg button[value=cancel]');
+  // a real cancel by the user (after a moment): nothing more is shown
+  await f.evaluate(() => { window.showSaveFilePicker = () => new Promise((_, rej) => setTimeout(() => rej(new DOMException('The user aborted a request.', 'AbortError')), 900)); });
+  await f.click('#tb-sig');
+  await f.waitForTimeout(2000);
+  check(await f.isHidden('#ready-dlg'), 'user cancelling the browser\'s Save as window: nothing else opens');
   await fctx.close();
 }
 

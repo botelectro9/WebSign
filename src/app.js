@@ -1079,13 +1079,7 @@
       const n = fileName().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_');
       return /^[_ .]*$/.test(n.slice(0, -ext.length || undefined)) ? defaultBase + ext : n;
     };
-    // Android: the name also goes into the data: URL as a "name" parameter. WebView
-    // browsers do not pass the download attribute to their downloader, so this is the only
-    // other place a downloader may find it (whether it is used is up to the browser).
-    const syncName = () => {
-      link.download = asciiName();
-      if (webView) link.href = url.replace(/;base64,/, `;name=${encodeURIComponent(link.download)};base64,`);
-    };
+    const syncName = () => { link.download = asciiName(); };
     link.href = url;
     els.readyName.value = defaultBase;
     els.readyExt.textContent = ext;
@@ -1158,23 +1152,33 @@
     const info = FORMAT_INFO[fmt];
     let handle = null;
     if (typeof window.showSaveFilePicker === 'function') {
+      const asked = performance.now();
       try {
         handle = await window.showSaveFilePicker({
           suggestedName: name,
           types: [{ description: info.label, accept: { [info.mime]: info.accept } }],
         });
       } catch (e) {
-        if (e && e.name === 'AbortError') return false;
-        console.warn('showSaveFilePicker failed, downloading instead:', e);
+        // Some browsers (DuckDuckGo for Android) have the function but show no window and
+        // answer "cancelled" at once. A real cancel by the user takes longer than that, so
+        // a near-instant AbortError means "no picker here": use the Save as window instead.
+        if (e && e.name === 'AbortError' && performance.now() - asked > 600) return false;
+        console.warn('showSaveFilePicker unavailable, using the Save as window:', e);
         handle = null;
       }
     }
     const blob = await makeBlob();
     if (handle) {
-      const w = await handle.createWritable();
-      await w.write(blob);
-      await w.close();
-      savedToast(t('toast.saved', { name: handle.name || name }));
+      try {
+        const w = await handle.createWritable();
+        await w.write(blob);
+        await w.close();
+        savedToast(t('toast.saved', { name: handle.name || name }));
+        return true;
+      } catch (e) {
+        console.warn('Writing through the picker failed, using the Save as window:', e);
+        return offerDownload(blob, name);
+      }
     } else {
       // No "Save as" picker in this browser (Firefox, Safari, mobile browsers, Brave…).
       // A download started by script after the export is silently dropped by several of
