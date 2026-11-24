@@ -62,7 +62,7 @@
     penPop: $('pen-pop'), dropOverlay: $('drop-overlay'),
     tbVision: $('tb-vision'), visionMenu: $('vision-menu'),
     saveDlg: $('save-dlg'), saveForm: $('save-form'), saveNote: $('save-note'), saveOutline: $('save-outline'),
-    saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
+    saveCopy: $('save-copy'), saveShare: $('save-share'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
     readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
@@ -1063,7 +1063,7 @@
   // download blob: URLs at all; most of them do handle data: URLs. They often send a plain
   // Chrome user agent, so they cannot be told apart reliably: every Android browser gets a
   // data: link (Chrome and Firefox for Android download those too).
-  function isAndroidWebView() {
+  function isAndroid() {
     const ua = navigator.userAgent || '';
     const uaData = navigator.userAgentData;
     return /Android/i.test(ua) || !!(uaData && /Android/i.test(uaData.platform || ''));
@@ -1104,7 +1104,7 @@
     const dot = name.lastIndexOf('.');
     const ext = dot > 0 ? name.slice(dot) : '';
     const defaultBase = dot > 0 ? name.slice(0, dot) : name;
-    const webView = isAndroidWebView();
+    const webView = isAndroid();
     const url = webView ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
     const shareable = canShareFile(new File([blob], name, { type: blob.type }));
     const link = els.readyLink;
@@ -1470,7 +1470,12 @@
       : '';
     const ow = overwriteStatus(fmt);
     els.saveOverwrite.disabled = !ow.ok;
-    els.saveReason.textContent = ow.reason;
+    // Share… is offered on Android only; disabled with a reason where files cannot be shared.
+    const android = isAndroid();
+    const sharing = android && canShareType(FORMAT_INFO[fmt].mime, fmt);
+    els.saveShare.hidden = !android;
+    els.saveShare.disabled = !sharing;
+    els.saveReason.textContent = [android && !sharing ? t('save.shareUnsupported') : '', ow.reason].filter(Boolean).join(' ');
     els.saveOutline.disabled = !state.box;
   }
 
@@ -1487,6 +1492,30 @@
   }
   els.saveForm.addEventListener('change', refreshSaveDialog);
   els.saveCancel.addEventListener('click', () => els.saveDlg.close('cancel'));
+  function canShareType(mime, fmt) {
+    return canShareFile(new File([new Uint8Array(1)], `x.${FORMAT_INFO[fmt].ext}`, { type: mime }));
+  }
+  // Share…: export, then open the system share sheet (Drive, Files, mail, messaging…).
+  // Sharing needs a recent tap; if the export took too long the browser refuses, and the
+  // small Save as window (which has its own Share… button) takes over.
+  els.saveShare.addEventListener('click', () => {
+    const fmt = selectedFormat();
+    const outline = els.saveOutline.checked && !!state.box;
+    const name = `${baseName()}-signed.${FORMAT_INFO[fmt].ext}`;
+    els.saveDlg.close('share');
+    runSave(async () => {
+      const blob = await buildExport(fmt, outline);
+      try {
+        await navigator.share({ files: [new File([blob], name, { type: blob.type })], title: name });
+        savedToast(t('toast.shared', { name }));
+        return true;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return false;
+        if (e && e.name === 'NotAllowedError') return offerDownload(blob, name);
+        throw new Error(t('err.share', { error: errorMessage(e) }));
+      }
+    });
+  });
   els.saveCopy.addEventListener('click', () => {
     const fmt = selectedFormat();
     const outline = els.saveOutline.checked && !!state.box;

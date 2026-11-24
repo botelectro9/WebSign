@@ -37,6 +37,7 @@ place a signature box, sign inside it with your mouse or your finger, and save t
      Chrome/Edge; in other browsers a small **Save as** window asks for the file name, tap
      **Save** and it goes to your downloads folder or wherever the browser asks; on
      phones, **Share…** → *Save to Files* (iOS) lets you pick the folder);
+   - **Share…** (Android only) — sends the signed file to another app (Drive, Files, mail…);
    - **Cancel**.
 
    PDF keeps all pages of the original (text stays selectable); PNG and JPG contain the
@@ -95,6 +96,7 @@ doigt, puis enregistrez le résultat.
      **Enregistrer sous** demande le nom du fichier, touchez **Enregistrer** et il va dans
      vos téléchargements ou là où le navigateur le demande&nbsp;; sur téléphone,
      **Partager…** → *Enregistrer dans Fichiers* (iOS) permet de choisir le dossier)&nbsp;;
+   - **Partager…** (Android uniquement) — envoie le fichier signé vers une autre application&nbsp;;
    - **Annuler**.
 
    Le PDF conserve toutes les pages de l’original (le texte reste sélectionnable)&nbsp;;

@@ -243,6 +243,7 @@ async function saveCopy(page, fmt, outline) {
   await page.click('#tb-save');
   await page.check(`#save-dlg input[name=fmt][value=${fmt}]`);
   if (outline) await page.check('#save-outline'); else await page.uncheck('#save-outline');
+  check(await page.isHidden('#save-share') === !(await page.evaluate(() => /Android/.test(navigator.userAgent))), 'Share… shown on Android only');
   await page.click('#save-copy');
 }
 
@@ -871,6 +872,15 @@ async function appSuite(lang) {
   ]);
   check(renamed.suggestedFilename() === 'Contrat signefinal.pdf', `typed name used, forbidden characters removed, accents simplified (${renamed.suggestedFilename()})`);
   check(await w.isHidden('#ready-hint'), 'no WebView warning when the browser can share');
+  // Share… in the save window (Android only)
+  await w.click('#tb-save');
+  await w.check('#save-dlg input[name=fmt][value=pdf]');
+  check(await w.isVisible('#save-share') && await w.isEnabled('#save-share'), 'Android: Share… button in the save window');
+  await w.screenshot({ path: join(SHOTS, `${lang}-android-save-share.png`) });
+  await w.click('#save-share');
+  await w.waitForFunction(() => window.__shared.length === 2, null, { timeout: 30000 });
+  const sharedPdf = await w.evaluate(() => window.__shared[1]);
+  check(sharedPdf.name === 'photo-signed.pdf' && sharedPdf.type === 'application/pdf' && sharedPdf.size > 1000, `Share… sends the signed PDF (${JSON.stringify(sharedPdf)})`);
   // a WebView browser without share sheet (DuckDuckGo for Android): warning + image to long-press
   await w.evaluate(() => { navigator.share = undefined; navigator.canShare = undefined; });
   await w.click('#tb-sig');
@@ -879,7 +889,10 @@ async function appSuite(lang) {
   check((await w.getAttribute('#ready-img', 'src')).startsWith('data:image/png'), 'long-press image is the signature PNG');
   await w.screenshot({ path: join(SHOTS, `${lang}-webview-limited.png`) });
   await w.click('#ready-dlg button[value=cancel]');
-  await saveCopy(w, 'pdf', false);
+  await w.click('#tb-save');
+  await w.check('#save-dlg input[name=fmt][value=pdf]');
+  check(await w.isDisabled('#save-share') && /Share|Partager/.test(await w.textContent('#save-reason')), 'no share sheet: Share… disabled with a reason');
+  await w.click('#save-copy');
   await w.waitForSelector('#ready-dlg[open]');
   check(await w.isVisible('#ready-hint') && await w.isHidden('#ready-preview'), 'PDF: warning only, no image');
   await w.click('#ready-dlg button[value=cancel]');
