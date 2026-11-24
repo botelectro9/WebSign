@@ -189,3 +189,13 @@ after a slow export are dropped by Safari/iOS), plus **Share…** (Web Share wit
 where supported — on iOS this offers *Save to Files* with a folder choice. Android
 WebView-based browsers (DuckDuckGo, Via…) cannot download `blob:` URLs, so they get a
 `data:` URL link instead.
+
+## Colour-vision palettes (added on request)
+
+An eye button at the end of the toolbar opens a menu: *Normal colours* (default),
+*Protanopia*, *Deuteranopia*, *Tritanopia*. The landing page (header) and the guides (start
+of the page) have the same choice as a drop-down. The choice is stored in `localStorage`
+(`websign.vision`, local only), applied in `<head>` before first paint on every page, and
+synced across open tabs. Protanopia/deuteranopia use navy / yellow / blue, tritanopia uses
+neutral dark / cyan / coral red; all text pairs ≥ 6.3:1. With a non-normal palette, ink
+swatches show their names. Documents and ink colours are never changed.

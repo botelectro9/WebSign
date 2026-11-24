@@ -10,6 +10,7 @@
 <meta name="description" content="Sign a PDF or an image in your browser. Nothing is uploaded.">
 <title>WebSign – Sign a PDF or an image</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1.5l3 2.2 3.6-.6 1.6 3.3 3.4 1.4-.3 3.7 2.4 2.8-2 3.1.8 3.6-3.1 2-.7 3.6-3.7.3-2.3 2.9L16 30.5l-3.6 1.1-2.3-2.9-3.7-.3-.7-3.6-3.1-2 .8-3.6-2-3.1 2.4-2.8-.3-3.7 3.4-1.4 1.6-3.3 3.6.6z' fill='%23ec7a2f'/%3E%3Cpath d='M8.5 19.5c2.6-.8 3.4-7.5 5.2-7.5s.8 6.6 2.6 6.6 1.7-4 3.4-4 .9 3.3 2.6 3.3 1.6-1.4 1.6-1.4' fill='none' stroke='%231c0e04' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>try{var v=localStorage.getItem('websign.vision');if(v==='protan'||v==='deutan'||v==='tritan')document.documentElement.setAttribute('data-vision',v)}catch(e){}</script>
 <style>
 /* WebSign design tokens: "a writing desk at night".
    Bottle-green blotter, felt surfaces, parchment text, brass (yellow) for the signature
@@ -106,6 +107,43 @@ a.btn.primary { color: var(--wax-ink); }
   .bar { gap: 6px; }
   .brand-link span { display: none; }
 }
+
+/* ---------- colour-vision palettes (html[data-vision]) ----------
+   Standard: green / yellow / orange. Protanopia and deuteranopia (red-green) cannot tell
+   the green background, the yellow and the orange apart, so they get a navy / yellow /
+   blue scheme. Tritanopia (blue-yellow) gets a neutral dark / cyan / coral-red scheme.
+   Every text pair stays at WCAG AAA (7:1) except muted text on raised surfaces (≥ 6.3:1). */
+html[data-vision="protan"] {
+  --bg: #0d1b2e; --surface: #15263d; --surface-2: #1d3250; --surface-3: #284166;
+  --text: #f1ede2; --muted: #aab8cc;
+  --brass: #f5cf3c; --wax: #5ba4ff; --wax-hover: #7cb6ff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffc56b;
+}
+html[data-vision="deutan"] {
+  --bg: #0f1a2c; --surface: #17263b; --surface-2: #20324c; --surface-3: #2b4163;
+  --text: #f1ede2; --muted: #abb7c8;
+  --brass: #ffd23f; --wax: #4d9bff; --wax-hover: #70afff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffb347;
+}
+html[data-vision="tritan"] {
+  --bg: #18181c; --surface: #222228; --surface-2: #2d2d35; --surface-3: #3a3a44;
+  --text: #f4efe8; --muted: #bdb8b2;
+  --brass: #5fe0e0; --wax: #ff6a5c; --wax-hover: #ff8478; --wax-ink: #1f0402;
+  --leaf: #c9f2f2; --danger: #ff9c9c;
+}
+html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink); }
+
+/* colour-vision drop-down (landing page and guides) */
+.vision-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.vision-pick .ico { width: 20px; height: 20px; color: var(--brass); }
+.vision-pick select {
+  min-height: 36px; padding: 0 30px 0 10px; font: inherit; color: var(--text);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23a8bca8' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center / 12px 8px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  -webkit-appearance: none; appearance: none; cursor: pointer; max-width: 62vw;
+}
+.vision-pick select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.vision-pick option { background: var(--surface); color: var(--text); }
 /* ---------- start screen ---------- */
 .viewer { min-height: 100%; }
 .start {
@@ -374,6 +412,22 @@ a.btn.primary { color: var(--wax-ink); }
 
 /* "File ready" dialog: three buttons may need two rows on narrow phones */
 #ready-dlg .actions { flex-wrap: wrap; }
+
+/* colour-vision menu (eye button) */
+.vision-menu .radio {
+  width: 18px; height: 18px; flex: none; border-radius: 50%;
+  border: 2px solid var(--muted); display: grid; place-items: center;
+}
+.vision-menu [aria-checked="true"] .radio { border-color: var(--brass); }
+.vision-menu [aria-checked="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--brass); }
+.vision-menu [aria-checked="true"] { color: var(--text); font-weight: 600; }
+/* with a colour-vision palette active, ink colours also show their names */
+html[data-vision] .swatches { grid-template-columns: repeat(3, auto); }
+html[data-vision] .swatch { width: auto; height: auto; min-height: 44px; padding: 4px 8px 4px 4px; border-radius: 8px; justify-content: start; display: flex; gap: 8px; font-size: 13px; color: var(--text); }
+html[data-vision] .swatch span { width: 26px; height: 26px; flex: none; }
+.swatch .sw-name { display: none; }
+html[data-vision] .swatch .sw-name { display: inline; white-space: nowrap; }
+html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
 </style>
 </head>
 <body>
@@ -391,6 +445,7 @@ a.btn.primary { color: var(--wax-ink); }
     <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L13 19"/><path d="M7 21h13M5.5 12.5l6 6"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </defs>
@@ -431,12 +486,21 @@ a.btn.primary { color: var(--wax-ink); }
     <span class="sep" aria-hidden="true"></span>
     <button type="button" class="tb" id="tb-sig" data-i18n-aria="tb.sig" aria-label="Save signature as PNG" data-i18n-tip="tb.sigTip" data-tip="Save signature (PNG)" disabled><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></button>
     <button type="button" class="tb" id="tb-save" data-i18n-aria="tb.save" aria-label="Save page as PDF, PNG or JPG" data-i18n-tip="tb.saveTip" data-tip="Save page" disabled><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="tb" id="tb-vision" data-i18n-aria="tb.vision" aria-label="Colours for colour blindness" data-i18n-tip="tb.visionTip" data-tip="Colours" aria-haspopup="menu" aria-expanded="false"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
   </nav>
 
   <div id="box-menu" class="popover menu" role="menu" data-i18n-aria="menu.label" aria-label="Signature box" hidden>
     <button type="button" role="menuitem" id="bm-erase"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg><span data-i18n="menu.erase">Erase content</span></button>
     <button type="button" role="menuitem" id="bm-delete" class="danger"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="menu.delete">Delete box</span></button>
     <button type="button" role="menuitem" id="bm-cancel"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg><span data-i18n="menu.cancel">Cancel</span></button>
+  </div>
+
+  <div id="vision-menu" class="popover menu vision-menu" role="menu" data-i18n-aria="vision.label" aria-label="Colours" hidden>
+    <button type="button" role="menuitemradio" data-vision="normal"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.normal">Normal colours</span></button>
+    <button type="button" role="menuitemradio" data-vision="protan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.protan">Protanopia (red-blind)</span></button>
+    <button type="button" role="menuitemradio" data-vision="deutan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.deutan">Deuteranopia (green-blind)</span></button>
+    <button type="button" role="menuitemradio" data-vision="tritan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.tritan">Tritanopia (blue-blind)</span></button>
   </div>
 
   <div id="pen-pop" class="popover swatches" role="radiogroup" data-i18n-aria="pen.label" aria-label="Pen colour" hidden></div>
@@ -26701,6 +26765,13 @@ const WEBSIGN_STRINGS = {
  "toast.signHint": "Sign inside the box with your mouse or finger.",
  "toast.saved": "Saved {name}",
  "toast.downloaded": "Downloaded {name}",
+ "tb.vision": "Colours for colour blindness",
+ "tb.visionTip": "Colours",
+ "vision.label": "Colours",
+ "vision.normal": "Normal colours",
+ "vision.protan": "Protanopia (red-blind)",
+ "vision.deutan": "Deuteranopia (green-blind)",
+ "vision.tritan": "Tritanopia (blue-blind)",
  "ready.title": "Your file is ready",
  "ready.note": "This browser cannot open a “Save as” window. Click “Save file” to save {name}: depending on your browser settings, it either asks you where to save it or puts it in your Downloads folder.",
  "ready.noteShare": "This browser cannot open a “Save as” window. “Save file” puts {name} in your Downloads folder (or asks where, depending on the browser). To choose the folder yourself, use “Share…” then “Save to Files” (iPhone, iPad) or your files app (Android).",
@@ -26786,6 +26857,7 @@ const WEBSIGN_STRINGS = {
     tbSig: $('tb-sig'), tbSave: $('tb-save'),
     boxMenu: $('box-menu'), bmErase: $('bm-erase'), bmDelete: $('bm-delete'), bmCancel: $('bm-cancel'),
     penPop: $('pen-pop'), dropOverlay: $('drop-overlay'),
+    tbVision: $('tb-vision'), visionMenu: $('vision-menu'),
     saveDlg: $('save-dlg'), saveForm: $('save-form'), saveNote: $('save-note'), saveOutline: $('save-outline'),
     saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
@@ -27547,7 +27619,7 @@ const WEBSIGN_STRINGS = {
     pop.style.bottom = `${window.innerHeight - a.top + 10}px`;
   }
   function closePopovers() {
-    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen]]) {
+    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision]]) {
       if (!pop.hidden) { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
     }
   }
@@ -27587,7 +27659,7 @@ const WEBSIGN_STRINGS = {
     b.setAttribute('aria-label', name);
     b.title = name;
     b.dataset.color = hex;
-    b.innerHTML = `<span style="background:${hex}"></span>`;
+    b.innerHTML = `<span style="background:${hex}"></span><b class="sw-name">${name}</b>`;
     b.addEventListener('click', () => { setColor(hex); closePopovers(); els.tbPen.focus(); });
     els.penPop.appendChild(b);
   }
@@ -27613,19 +27685,54 @@ const WEBSIGN_STRINGS = {
   setColor('#000000');
   els.tbPen.addEventListener('click', () => togglePopover(els.penPop, els.tbPen, '[aria-checked="true"]'));
 
+  // Colour vision: normal colours (default) or a palette for protanopia, deuteranopia or
+  // tritanopia. Shared with the landing page and the guides; stored locally only.
+  const VISION_KEY = 'websign.vision';
+  function currentVision() {
+    return document.documentElement.getAttribute('data-vision') || 'normal';
+  }
+  function applyVision(v) {
+    if (v === 'protan' || v === 'deutan' || v === 'tritan') document.documentElement.setAttribute('data-vision', v);
+    else { document.documentElement.removeAttribute('data-vision'); v = 'normal'; }
+    for (const b of els.visionMenu.querySelectorAll('[data-vision]')) {
+      b.setAttribute('aria-checked', String(b.dataset.vision === v));
+    }
+    els.tbVision.classList.toggle('active-box', v !== 'normal');
+    return v;
+  }
+  applyVision(currentVision());
+  els.tbVision.addEventListener('click', () => togglePopover(els.visionMenu, els.tbVision, '[aria-checked="true"]'));
+  for (const b of els.visionMenu.querySelectorAll('[data-vision]')) {
+    b.addEventListener('click', () => {
+      const v = applyVision(b.dataset.vision);
+      try { localStorage.setItem(VISION_KEY, v); } catch { /* storage unavailable: applies to this page only */ }
+      closePopovers();
+      els.tbVision.focus();
+    });
+  }
+  els.visionMenu.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...els.visionMenu.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+  });
+  window.addEventListener('storage', (e) => { if (e.key === VISION_KEY) applyVision(e.newValue); });
+
   els.tbUndo.addEventListener('click', undo);
   els.tbRedo.addEventListener('click', redo);
   els.tbSig.addEventListener('click', () => saveSignature());
   els.tbSave.addEventListener('click', () => openSaveDialog());
 
   document.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen')) return;
+    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision')) return;
     closePopovers();
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (!els.boxMenu.hidden) { closePopovers(); els.tbBox.focus(); return; }
       if (!els.penPop.hidden) { closePopovers(); els.tbPen.focus(); return; }
+      if (!els.visionMenu.hidden) { closePopovers(); els.tbVision.focus(); return; }
     }
     if (!state.doc || document.querySelector('dialog[open]')) return;
     const t = e.target;

@@ -93,3 +93,40 @@ a.btn.primary { color: var(--wax-ink); }
   .bar { gap: 6px; }
   .brand-link span { display: none; }
 }
+
+/* ---------- colour-vision palettes (html[data-vision]) ----------
+   Standard: green / yellow / orange. Protanopia and deuteranopia (red-green) cannot tell
+   the green background, the yellow and the orange apart, so they get a navy / yellow /
+   blue scheme. Tritanopia (blue-yellow) gets a neutral dark / cyan / coral-red scheme.
+   Every text pair stays at WCAG AAA (7:1) except muted text on raised surfaces (≥ 6.3:1). */
+html[data-vision="protan"] {
+  --bg: #0d1b2e; --surface: #15263d; --surface-2: #1d3250; --surface-3: #284166;
+  --text: #f1ede2; --muted: #aab8cc;
+  --brass: #f5cf3c; --wax: #5ba4ff; --wax-hover: #7cb6ff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffc56b;
+}
+html[data-vision="deutan"] {
+  --bg: #0f1a2c; --surface: #17263b; --surface-2: #20324c; --surface-3: #2b4163;
+  --text: #f1ede2; --muted: #abb7c8;
+  --brass: #ffd23f; --wax: #4d9bff; --wax-hover: #70afff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffb347;
+}
+html[data-vision="tritan"] {
+  --bg: #18181c; --surface: #222228; --surface-2: #2d2d35; --surface-3: #3a3a44;
+  --text: #f4efe8; --muted: #bdb8b2;
+  --brass: #5fe0e0; --wax: #ff6a5c; --wax-hover: #ff8478; --wax-ink: #1f0402;
+  --leaf: #c9f2f2; --danger: #ff9c9c;
+}
+html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink); }
+
+/* colour-vision drop-down (landing page and guides) */
+.vision-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.vision-pick .ico { width: 20px; height: 20px; color: var(--brass); }
+.vision-pick select {
+  min-height: 36px; padding: 0 30px 0 10px; font: inherit; color: var(--text);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23a8bca8' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center / 12px 8px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  -webkit-appearance: none; appearance: none; cursor: pointer; max-width: 62vw;
+}
+.vision-pick select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.vision-pick option { background: var(--surface); color: var(--text); }

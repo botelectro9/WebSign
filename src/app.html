@@ -10,6 +10,7 @@
 <meta name="description" content="{{DESCRIPTION}}">
 <title>{{TITLE}}</title>
 <link rel="icon" href="{{FAVICON}}">
+{{VISION_HEAD}}
 <style>
 /* @CSS */
 </style>
@@ -52,12 +53,21 @@
     <span class="sep" aria-hidden="true"></span>
     <button type="button" class="tb" id="tb-sig" data-i18n-aria="tb.sig" data-i18n-tip="tb.sigTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></button>
     <button type="button" class="tb" id="tb-save" data-i18n-aria="tb.save" data-i18n-tip="tb.saveTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="tb" id="tb-vision" data-i18n-aria="tb.vision" data-i18n-tip="tb.visionTip" aria-haspopup="menu" aria-expanded="false"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></button>
   </nav>
 
   <div id="box-menu" class="popover menu" role="menu" data-i18n-aria="menu.label" hidden>
     <button type="button" role="menuitem" id="bm-erase"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg><span data-i18n="menu.erase"></span></button>
     <button type="button" role="menuitem" id="bm-delete" class="danger"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="menu.delete"></span></button>
     <button type="button" role="menuitem" id="bm-cancel"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg><span data-i18n="menu.cancel"></span></button>
+  </div>
+
+  <div id="vision-menu" class="popover menu vision-menu" role="menu" data-i18n-aria="vision.label" hidden>
+    <button type="button" role="menuitemradio" data-vision="normal"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.normal"></span></button>
+    <button type="button" role="menuitemradio" data-vision="protan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.protan"></span></button>
+    <button type="button" role="menuitemradio" data-vision="deutan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.deutan"></span></button>
+    <button type="button" role="menuitemradio" data-vision="tritan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.tritan"></span></button>
   </div>
 
   <div id="pen-pop" class="popover swatches" role="radiogroup" data-i18n-aria="pen.label" hidden></div>

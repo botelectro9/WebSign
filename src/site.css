@@ -3,7 +3,7 @@
   max-width: 1040px; margin: 0 auto;
   padding: calc(28px + var(--safe-t)) clamp(20px, 5vw, 48px) calc(40px + var(--safe-b));
 }
-.landing-head { display: flex; align-items: center; gap: 10px; }
+.landing-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .landing-head .logo { width: 34px; height: 34px; color: var(--wax); }
 .wordmark { font: 600 24px/1 var(--serif); color: var(--text); }
 
@@ -96,3 +96,6 @@
 .doc pre { overflow: auto; background: var(--surface-2); border: 1px solid var(--line); padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
 .doc pre code { border: 0; padding: 0; background: none; }
 .doc ul ul { margin-top: 6px; }
+
+.doc-vision { margin: 4px 0 18px; }
+@media (max-width: 520px) { .landing-head .vision-pick span { display: none; } }

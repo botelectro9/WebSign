@@ -7,7 +7,7 @@
   <li>the signature alone, as a transparent PNG image;</li>
   <li>the signed document, as a PDF, PNG or JPG file.</li>
 </ul>
-<p>Everything is done by a floating toolbar at the bottom of the screen. It has exactly six buttons:</p>
+<p>Everything is done by a floating toolbar at the bottom of the screen. It has seven buttons:</p>
 <table>
   <thead><tr><th>Button</th><th>What it does</th></tr></thead>
   <tbody>
@@ -17,6 +17,7 @@
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> Redo</td><td>Redoes what was undone.</td></tr>
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> Save signature</td><td>Saves the content of the box as a transparent PNG image.</td></tr>
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> Save page</td><td>Saves the signed document as PDF, PNG or JPG.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></span> Colours</td><td>Switches the colours of WebSign for colour blindness, or back to normal colours (see <a href="#vision">Colours for colour blindness</a>).</td></tr>
   </tbody>
 </table>
 <p>Buttons that cannot be used yet are greyed out (for example, <em>Save signature</em> stays disabled until there is ink in the box).</p>
@@ -125,6 +126,16 @@
 </dl>
 <p>Saving several times in a row is safe: WebSign always starts again from the original, unsigned content it read when you opened the file, so the signature is never stamped twice. Keep in mind that after an overwrite, the file on your disk contains the signature permanently; if you open it again later, the signature is part of the document.</p>
 <p>If you try to leave or reload the page while you have signing work that has not been saved, the browser asks you to confirm.</p>
+
+<h2 id="vision">Colours for colour blindness</h2>
+<p>WebSign normally uses green, yellow and orange. If you have difficulty telling some colours apart, choose another palette:</p>
+<ul>
+  <li><strong>Normal colours</strong>: the default green, yellow and orange.</li>
+  <li><strong>Protanopia (red-blind)</strong> and <strong>Deuteranopia (green-blind)</strong>: navy blue, yellow and blue, which stay distinct when red and green look alike.</li>
+  <li><strong>Tritanopia (blue-blind)</strong>: dark grey, cyan and coral red, which stay distinct when blue and yellow look alike.</li>
+</ul>
+<p>Choose the palette with the <strong>Colours</strong> button <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></span> in the toolbar, or with the <strong>Colours</strong> drop-down at the top of the home page and of this guide. Choose <strong>Normal colours</strong> to go back to the classic colours.</p>
+<p>Your choice applies to every WebSign page and is remembered by your browser on this device only; it is never sent anywhere. When a palette other than the normal one is active, the ink colours also show their names. The palette only changes WebSign itself: your document and the ink colour of your signature are not modified.</p>
 
 <h2 id="offline">Using WebSign offline or from your computer</h2>
 <p>WebSign is made of five independent files. Each page contains everything it needs, so you can copy them to your computer and open them directly from the disk (by double-clicking <code>index.html</code>), without any web server and without an Internet connection:</p>

@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0f241b">
 <title>WebSign – Guide d’utilisation</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1.5l3 2.2 3.6-.6 1.6 3.3 3.4 1.4-.3 3.7 2.4 2.8-2 3.1.8 3.6-3.1 2-.7 3.6-3.7.3-2.3 2.9L16 30.5l-3.6 1.1-2.3-2.9-3.7-.3-.7-3.6-3.1-2 .8-3.6-2-3.1 2.4-2.8-.3-3.7 3.4-1.4 1.6-3.3 3.6.6z' fill='%23ec7a2f'/%3E%3Cpath d='M8.5 19.5c2.6-.8 3.4-7.5 5.2-7.5s.8 6.6 2.6 6.6 1.7-4 3.4-4 .9 3.3 2.6 3.3 1.6-1.4 1.6-1.4' fill='none' stroke='%231c0e04' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>try{var v=localStorage.getItem('websign.vision');if(v==='protan'||v==='deutan'||v==='tritan')document.documentElement.setAttribute('data-vision',v)}catch(e){}</script>
 <style>
 /* WebSign design tokens: "a writing desk at night".
    Bottle-green blotter, felt surfaces, parchment text, brass (yellow) for the signature
@@ -105,12 +106,49 @@ a.btn.primary { color: var(--wax-ink); }
   .bar { gap: 6px; }
   .brand-link span { display: none; }
 }
+
+/* ---------- colour-vision palettes (html[data-vision]) ----------
+   Standard: green / yellow / orange. Protanopia and deuteranopia (red-green) cannot tell
+   the green background, the yellow and the orange apart, so they get a navy / yellow /
+   blue scheme. Tritanopia (blue-yellow) gets a neutral dark / cyan / coral-red scheme.
+   Every text pair stays at WCAG AAA (7:1) except muted text on raised surfaces (≥ 6.3:1). */
+html[data-vision="protan"] {
+  --bg: #0d1b2e; --surface: #15263d; --surface-2: #1d3250; --surface-3: #284166;
+  --text: #f1ede2; --muted: #aab8cc;
+  --brass: #f5cf3c; --wax: #5ba4ff; --wax-hover: #7cb6ff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffc56b;
+}
+html[data-vision="deutan"] {
+  --bg: #0f1a2c; --surface: #17263b; --surface-2: #20324c; --surface-3: #2b4163;
+  --text: #f1ede2; --muted: #abb7c8;
+  --brass: #ffd23f; --wax: #4d9bff; --wax-hover: #70afff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffb347;
+}
+html[data-vision="tritan"] {
+  --bg: #18181c; --surface: #222228; --surface-2: #2d2d35; --surface-3: #3a3a44;
+  --text: #f4efe8; --muted: #bdb8b2;
+  --brass: #5fe0e0; --wax: #ff6a5c; --wax-hover: #ff8478; --wax-ink: #1f0402;
+  --leaf: #c9f2f2; --danger: #ff9c9c;
+}
+html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink); }
+
+/* colour-vision drop-down (landing page and guides) */
+.vision-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.vision-pick .ico { width: 20px; height: 20px; color: var(--brass); }
+.vision-pick select {
+  min-height: 36px; padding: 0 30px 0 10px; font: inherit; color: var(--text);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23a8bca8' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center / 12px 8px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  -webkit-appearance: none; appearance: none; cursor: pointer; max-width: 62vw;
+}
+.vision-pick select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.vision-pick option { background: var(--surface); color: var(--text); }
 /* ---------- landing ---------- */
 .landing-main {
   max-width: 1040px; margin: 0 auto;
   padding: calc(28px + var(--safe-t)) clamp(20px, 5vw, 48px) calc(40px + var(--safe-b));
 }
-.landing-head { display: flex; align-items: center; gap: 10px; }
+.landing-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .landing-head .logo { width: 34px; height: 34px; color: var(--wax); }
 .wordmark { font: 600 24px/1 var(--serif); color: var(--text); }
 
@@ -203,6 +241,9 @@ a.btn.primary { color: var(--wax-ink); }
 .doc pre { overflow: auto; background: var(--surface-2); border: 1px solid var(--line); padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
 .doc pre code { border: 0; padding: 0; background: none; }
 .doc ul ul { margin-top: 6px; }
+
+.doc-vision { margin: 4px 0 18px; }
+@media (max-width: 520px) { .landing-head .vision-pick span { display: none; } }
 </style>
 </head>
 <body>
@@ -220,6 +261,7 @@ a.btn.primary { color: var(--wax-ink); }
     <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L13 19"/><path d="M7 21h13M5.5 12.5l6 6"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </defs>
@@ -244,6 +286,7 @@ a.btn.primary { color: var(--wax-ink); }
       <li><a href="#annuler">Annuler et rétablir</a></li>
       <li><a href="#enregistrer-signature">Enregistrer la signature en PNG</a></li>
       <li><a href="#enregistrer-document">Enregistrer le document</a></li>
+      <li><a href="#daltonisme">Couleurs adaptées au daltonisme</a></li>
       <li><a href="#hors-ligne">Utiliser WebSign hors ligne ou depuis votre ordinateur</a></li>
       <li><a href="#hebergement">Héberger WebSign sur GitHub Pages</a></li>
       <li><a href="#limites">Limites connues</a></li>
@@ -252,6 +295,7 @@ a.btn.primary { color: var(--wax-ink); }
     </ol>
   </nav>
   <main class="doc">
+    <div class="doc-vision"><label class="vision-pick"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>Couleurs</span><select id="vision-select"><option value="normal">Couleurs normales</option><option value="protan">Protanopie (rouge)</option><option value="deutan">Deutéranopie (vert)</option><option value="tritan">Tritanopie (bleu)</option></select></label></div>
 <h1>Guide d’utilisation de WebSign</h1>
 <p class="lede">WebSign vous permet d’apposer une signature manuscrite sur un PDF ou une image, directement dans votre navigateur, puis d’enregistrer le résultat.</p>
 
@@ -261,7 +305,7 @@ a.btn.primary { color: var(--wax-ink); }
   <li>la signature seule, sous forme d’image PNG à fond transparent&#8239;;</li>
   <li>le document signé, au format PDF, PNG ou JPG.</li>
 </ul>
-<p>Tout se fait depuis la barre d’outils flottante, en bas de l’écran. Elle compte exactement six boutons&#8239;:</p>
+<p>Tout se fait depuis la barre d’outils flottante, en bas de l’écran. Elle compte sept boutons&#8239;:</p>
 <table>
   <thead><tr><th>Bouton</th><th>Rôle</th></tr></thead>
   <tbody>
@@ -271,6 +315,7 @@ a.btn.primary { color: var(--wax-ink); }
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> Rétablir</td><td>Rétablit ce qui a été annulé.</td></tr>
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> Enregistrer la signature</td><td>Enregistre le contenu du cadre en image PNG transparente.</td></tr>
     <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> Enregistrer la page</td><td>Enregistre le document signé en PDF, PNG ou JPG.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></span> Couleurs</td><td>Adapte les couleurs de WebSign au daltonisme, ou revient aux couleurs normales (voir <a href="#daltonisme">Couleurs adaptées au daltonisme</a>).</td></tr>
   </tbody>
 </table>
 <p>Les boutons inutilisables pour l’instant sont grisés (par exemple, <em>Enregistrer la signature</em> reste inactif tant que le cadre est vide).</p>
@@ -380,6 +425,16 @@ a.btn.primary { color: var(--wax-ink); }
 <p>Vous pouvez enregistrer plusieurs fois de suite sans risque&#8239;: WebSign repart toujours du contenu d’origine, non signé, lu à l’ouverture du fichier&#8239;; la signature n’est donc jamais apposée deux fois. Gardez cependant à l’esprit qu’après un écrasement, le fichier sur votre disque contient définitivement la signature&#8239;: si vous le rouvrez plus tard, elle fait partie du document.</p>
 <p>Si vous quittez ou rechargez la page alors qu’une signature n’a pas été enregistrée, le navigateur vous demande de confirmer.</p>
 
+<h2 id="daltonisme">Couleurs adaptées au daltonisme</h2>
+<p>WebSign utilise normalement du vert, du jaune et de l’orange. Si vous distinguez mal certaines couleurs, choisissez une autre palette&#8239;:</p>
+<ul>
+  <li><strong>Couleurs normales</strong>&#8239;: le vert, le jaune et l’orange par défaut.</li>
+  <li><strong>Protanopie (rouge)</strong> et <strong>Deutéranopie (vert)</strong>&#8239;: bleu marine, jaune et bleu, qui restent bien distincts quand le rouge et le vert se confondent.</li>
+  <li><strong>Tritanopie (bleu)</strong>&#8239;: gris foncé, cyan et rouge corail, qui restent bien distincts quand le bleu et le jaune se confondent.</li>
+</ul>
+<p>Choisissez la palette avec le bouton <strong>Couleurs</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg></span> de la barre d’outils, ou avec la liste <strong>Couleurs</strong> en haut de la page d’accueil et de ce guide. Choisissez <strong>Couleurs normales</strong> pour revenir aux couleurs classiques.</p>
+<p>Votre choix s’applique à toutes les pages de WebSign et il est mémorisé par votre navigateur, sur cet appareil uniquement&#8239;; il n’est jamais envoyé nulle part. Lorsqu’une autre palette que la normale est active, les couleurs d’encre affichent aussi leur nom. La palette ne change que l’apparence de WebSign&#8239;: votre document et la couleur d’encre de votre signature ne sont pas modifiés.</p>
+
 <h2 id="hors-ligne">Utiliser WebSign hors ligne ou depuis votre ordinateur</h2>
 <p>WebSign se compose de cinq fichiers indépendants. Chaque page contient tout ce dont elle a besoin&#8239;: vous pouvez les copier sur votre ordinateur et les ouvrir directement depuis le disque (en double-cliquant sur <code>index.html</code>), sans serveur web ni connexion Internet&#8239;:</p>
 <pre><code>index.html            page d’accueil (choix de la langue)
@@ -442,5 +497,10 @@ doc/doc_fr.html       ce guide en français</code></pre>
     </footer>
   </main>
 </div>
+<script>(function(){var s=document.getElementById('vision-select');var h=document.documentElement;
+function apply(v){if(v==='protan'||v==='deutan'||v==='tritan')h.setAttribute('data-vision',v);else{h.removeAttribute('data-vision');v='normal';}s.value=v;}
+apply(h.getAttribute('data-vision')||'normal');
+s.addEventListener('change',function(){apply(s.value);try{localStorage.setItem('websign.vision',s.value)}catch(e){}});
+window.addEventListener('storage',function(e){if(e.key==='websign.vision')apply(e.newValue);});})();</script>
 </body>
 </html>

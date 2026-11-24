@@ -393,6 +393,28 @@ async function staticSuite() {
   check(page.url().endsWith('/index.html'), 'docs → landing');
   await page.goBack();
   check(page.url().endsWith('/doc/doc_en.html'), 'browser back works');
+  // colour-vision drop-down on the landing page and the guides, shared through localStorage
+  await page.goto(fileUrl('index.html'));
+  check((await page.$eval('#vision-select', (s) => [...s.options].map((o) => o.value).join(','))) === 'normal,protan,deutan,tritan' &&
+    (await page.inputValue('#vision-select')) === 'normal', 'landing: colours drop-down at the top, Normal colours by default');
+  await page.selectOption('#vision-select', 'deutan');
+  check((await page.evaluate(() => document.documentElement.dataset.vision)) === 'deutan', 'landing: choosing a palette recolours the page');
+  await page.screenshot({ path: join(SHOTS, 'landing-deutan.png') });
+  await page.goto(fileUrl('doc/doc_fr.html'));
+  check((await page.inputValue('#vision-select')) === 'deutan' && (await page.evaluate(() => document.documentElement.dataset.vision)) === 'deutan',
+    'docs: the choice made on the landing page is applied before display');
+  const docPickFirst = await page.evaluate(() => {
+    const main = document.querySelector('main.doc');
+    return main.firstElementChild.classList.contains('doc-vision');
+  });
+  check(docPickFirst, 'docs: colours drop-down at the start of the page');
+  await page.selectOption('#vision-select', 'tritan');
+  await page.screenshot({ path: join(SHOTS, 'doc-tritan.png') });
+  await page.goto(fileUrl('app/websign_fr.html'));
+  check((await page.evaluate(() => document.documentElement.dataset.vision)) === 'tritan', 'app page applies the stored palette');
+  await page.goto(fileUrl('doc/doc_en.html'));
+  await page.selectOption('#vision-select', 'normal');
+  check(!(await page.evaluate(() => document.documentElement.hasAttribute('data-vision'))), 'docs: Normal colours restores the classic palette');
   const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, locale: 'fr-FR' });
   const mp = await mctx.newPage();
   watch(mp, 'static-mobile');
@@ -429,8 +451,8 @@ async function appSuite(lang) {
   await page.screenshot({ path: join(SHOTS, `${lang}-desktop-start.png`) });
 
   const tbButtons = await page.$$eval('#toolbar button', (bs) => bs.map((b) => b.id));
-  check(JSON.stringify(tbButtons) === JSON.stringify(['tb-box', 'tb-pen', 'tb-undo', 'tb-redo', 'tb-sig', 'tb-save']),
-    `toolbar has exactly box, pen, undo, redo, save signature, save page (${tbButtons.join(',')})`);
+  check(JSON.stringify(tbButtons) === JSON.stringify(['tb-box', 'tb-pen', 'tb-undo', 'tb-redo', 'tb-sig', 'tb-save', 'tb-vision']),
+    `toolbar has exactly box, pen, undo, redo, save signature, save page, colours (${tbButtons.join(',')})`);
   const labels = await page.$$eval('#toolbar button', (bs) => bs.every((b) => (b.getAttribute('aria-label') || '').length > 2));
   check(labels, 'every toolbar button has an aria-label');
 
@@ -448,6 +470,32 @@ async function appSuite(lang) {
   await page.evaluate(() => window.scrollTo(0, 0));
   check(await page.isDisabled('#tb-sig'), 'save signature disabled without a box');
   check(await page.isDisabled('#tb-undo'), 'undo disabled initially');
+
+  // --- colour vision (eye button) ---
+  const bgOf = (pg) => pg.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+  await page.click('#tb-vision');
+  check(await page.isVisible('#vision-menu'), 'eye button opens the colours menu');
+  const vItems = await page.$$eval('#vision-menu [data-vision]', (bs) => bs.map((b) => [b.dataset.vision, b.getAttribute('aria-checked'), b.textContent.trim()]));
+  check(JSON.stringify(vItems.map((v) => v[0])) === JSON.stringify(['normal', 'protan', 'deutan', 'tritan']) && vItems[0][1] === 'true' && vItems.every((v) => v[2].length > 3),
+    `colours menu: normal (checked by default), protanopia, deuteranopia, tritanopia (${vItems.map((v) => v[2]).join(' | ')})`);
+  const bgNormal = await bgOf(page);
+  const seen = new Set([bgNormal]);
+  for (const v of ['protan', 'deutan', 'tritan']) {
+    if (await page.isHidden('#vision-menu')) await page.click('#tb-vision');
+    await page.click(`#vision-menu [data-vision=${v}]`);
+    const st = await page.evaluate(() => [document.documentElement.dataset.vision, localStorage.getItem('websign.vision')]);
+    check(st[0] === v && st[1] === v, `${v}: palette applied and remembered locally`);
+    seen.add(await bgOf(page));
+  }
+  check(seen.size === 4, `each palette changes the page colours (${[...seen].join(', ')})`);
+  await page.click('#tb-pen');
+  check(await page.isVisible('#pen-pop .sw-name'), 'with a colour-vision palette, ink colours show their names');
+  await page.screenshot({ path: join(SHOTS, `${lang}-tritan-pen.png`) });
+  await page.click('#tb-pen');
+  await page.click('#tb-vision');
+  await page.click('#vision-menu [data-vision=normal]');
+  check((await bgOf(page)) === bgNormal && !(await page.evaluate(() => document.documentElement.hasAttribute('data-vision'))), 'Normal colours restores the classic palette');
+  check(await page.isHidden('#vision-menu'), 'colours menu closes after a choice');
 
   // --- add, move, resize ---
   await page.click('#tb-box');

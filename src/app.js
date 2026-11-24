@@ -60,6 +60,7 @@
     tbSig: $('tb-sig'), tbSave: $('tb-save'),
     boxMenu: $('box-menu'), bmErase: $('bm-erase'), bmDelete: $('bm-delete'), bmCancel: $('bm-cancel'),
     penPop: $('pen-pop'), dropOverlay: $('drop-overlay'),
+    tbVision: $('tb-vision'), visionMenu: $('vision-menu'),
     saveDlg: $('save-dlg'), saveForm: $('save-form'), saveNote: $('save-note'), saveOutline: $('save-outline'),
     saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
@@ -821,7 +822,7 @@
     pop.style.bottom = `${window.innerHeight - a.top + 10}px`;
   }
   function closePopovers() {
-    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen]]) {
+    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision]]) {
       if (!pop.hidden) { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
     }
   }
@@ -861,7 +862,7 @@
     b.setAttribute('aria-label', name);
     b.title = name;
     b.dataset.color = hex;
-    b.innerHTML = `<span style="background:${hex}"></span>`;
+    b.innerHTML = `<span style="background:${hex}"></span><b class="sw-name">${name}</b>`;
     b.addEventListener('click', () => { setColor(hex); closePopovers(); els.tbPen.focus(); });
     els.penPop.appendChild(b);
   }
@@ -887,19 +888,54 @@
   setColor('#000000');
   els.tbPen.addEventListener('click', () => togglePopover(els.penPop, els.tbPen, '[aria-checked="true"]'));
 
+  // Colour vision: normal colours (default) or a palette for protanopia, deuteranopia or
+  // tritanopia. Shared with the landing page and the guides; stored locally only.
+  const VISION_KEY = 'websign.vision';
+  function currentVision() {
+    return document.documentElement.getAttribute('data-vision') || 'normal';
+  }
+  function applyVision(v) {
+    if (v === 'protan' || v === 'deutan' || v === 'tritan') document.documentElement.setAttribute('data-vision', v);
+    else { document.documentElement.removeAttribute('data-vision'); v = 'normal'; }
+    for (const b of els.visionMenu.querySelectorAll('[data-vision]')) {
+      b.setAttribute('aria-checked', String(b.dataset.vision === v));
+    }
+    els.tbVision.classList.toggle('active-box', v !== 'normal');
+    return v;
+  }
+  applyVision(currentVision());
+  els.tbVision.addEventListener('click', () => togglePopover(els.visionMenu, els.tbVision, '[aria-checked="true"]'));
+  for (const b of els.visionMenu.querySelectorAll('[data-vision]')) {
+    b.addEventListener('click', () => {
+      const v = applyVision(b.dataset.vision);
+      try { localStorage.setItem(VISION_KEY, v); } catch { /* storage unavailable: applies to this page only */ }
+      closePopovers();
+      els.tbVision.focus();
+    });
+  }
+  els.visionMenu.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...els.visionMenu.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+  });
+  window.addEventListener('storage', (e) => { if (e.key === VISION_KEY) applyVision(e.newValue); });
+
   els.tbUndo.addEventListener('click', undo);
   els.tbRedo.addEventListener('click', redo);
   els.tbSig.addEventListener('click', () => saveSignature());
   els.tbSave.addEventListener('click', () => openSaveDialog());
 
   document.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen')) return;
+    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision')) return;
     closePopovers();
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (!els.boxMenu.hidden) { closePopovers(); els.tbBox.focus(); return; }
       if (!els.penPop.hidden) { closePopovers(); els.tbPen.focus(); return; }
+      if (!els.visionMenu.hidden) { closePopovers(); els.tbVision.focus(); return; }
     }
     if (!state.doc || document.querySelector('dialog[open]')) return;
     const t = e.target;

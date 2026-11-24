@@ -102,6 +102,30 @@ function fill(template, vars, label) {
   return html;
 }
 
+// ---------------------------------------------------------------------------
+// Colour-vision setting, shared by every page. Stored locally (localStorage) only.
+// ---------------------------------------------------------------------------
+const VISIONS = ['normal', 'protan', 'deutan', 'tritan'];
+// Applied in <head> before the first paint so the page never flashes the wrong palette.
+const VISION_HEAD = `<script>try{var v=localStorage.getItem('websign.vision');if(v==='protan'||v==='deutan'||v==='tritan')document.documentElement.setAttribute('data-vision',v)}catch(e){}</script>`;
+const VISION_LABELS = {
+  en: { label: 'Colours', normal: 'Normal colours', protan: 'Protanopia (red-blind)', deutan: 'Deuteranopia (green-blind)', tritan: 'Tritanopia (blue-blind)' },
+  fr: { label: 'Couleurs', normal: 'Couleurs normales', protan: 'Protanopie (rouge)', deutan: 'Deutéranopie (vert)', tritan: 'Tritanopie (bleu)' },
+  both: { label: 'Colours / Couleurs', normal: 'Normal colours / Couleurs normales', protan: 'Protanopia / Protanopie', deutan: 'Deuteranopia / Deutéranopie', tritan: 'Tritanopia / Tritanopie' },
+};
+function visionPick(key) {
+  const l = VISION_LABELS[key];
+  const opts = VISIONS.map((v) => `<option value="${v}">${escapeHtml(l[v])}</option>`).join('');
+  return `<label class="vision-pick"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>${escapeHtml(l.label)}</span>` +
+    `<select id="vision-select">${opts}</select></label>`;
+}
+// Drop-down behaviour on the landing page and the guides; follows changes made in other tabs.
+const VISION_JS = `<script>(function(){var s=document.getElementById('vision-select');var h=document.documentElement;
+function apply(v){if(v==='protan'||v==='deutan'||v==='tritan')h.setAttribute('data-vision',v);else{h.removeAttribute('data-vision');v='normal';}s.value=v;}
+apply(h.getAttribute('data-vision')||'normal');
+s.addEventListener('change',function(){apply(s.value);try{localStorage.setItem('websign.vision',s.value)}catch(e){}});
+window.addEventListener('storage',function(e){if(e.key==='websign.vision')apply(e.newValue);});})();</script>`;
+
 const outputs = [];
 function emit(rel, html) {
   const out = join(root, rel);
@@ -137,6 +161,7 @@ for (const lang of LANGS) {
     DESCRIPTION: escapeHtml(dict['page.description']),
     CSP: CSP_APP,
     FAVICON,
+    VISION_HEAD,
     '<!-- @ICONS -->': ICONS,
     '/* @CSS */': appCss.trim(),
     '/* @JS */': `${strings}\n${appJs.trim()}`,
@@ -169,6 +194,9 @@ for (const lang of LANGS) {
     TITLE: escapeHtml(d.title),
     CSP: CSP_STATIC,
     FAVICON,
+    VISION_HEAD,
+    VISION_PICK: visionPick(lang),
+    VISION_JS,
     HOME_LABEL: escapeHtml(d.home),
     HOME_TEXT: escapeHtml(d.homeText),
     OTHER_HREF: `doc_${other}.html`,
@@ -190,6 +218,9 @@ for (const lang of LANGS) {
 emit('index.html', fill(text('src/index.html'), {
   CSP: CSP_STATIC,
   FAVICON,
+  VISION_HEAD,
+  VISION_PICK: visionPick('both'),
+  VISION_JS,
   '<!-- @ICONS -->': ICONS,
   '/* @CSS */': siteCss.trim(),
 }, 'index'));

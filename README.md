@@ -41,6 +41,9 @@ place a signature box, sign inside it with your mouse or your finger, and save t
 
    PDF keeps all pages of the original (text stays selectable); PNG and JPG contain the
    page that holds the box.
+9. **Colour blindness** — the *eye* button in the toolbar (and the *Colours* drop-down at the
+   top of the home page and the guides) offers *Normal colours* (default), *Protanopia*,
+   *Deuteranopia* and *Tritanopia* palettes. The choice is remembered on your device only.
 
 ### Privacy
 
@@ -96,6 +99,9 @@ doigt, puis enregistrez le résultat.
 
    Le PDF conserve toutes les pages de l’original (le texte reste sélectionnable)&nbsp;;
    PNG et JPG contiennent la page qui porte le cadre.
+9. **Daltonisme** — le bouton *œil* de la barre d’outils (et la liste *Couleurs* en haut de
+   la page d’accueil et des guides) propose *Couleurs normales* (par défaut), *Protanopie*,
+   *Deutéranopie* et *Tritanopie*. Le choix est mémorisé sur votre appareil uniquement.
 
 ### Confidentialité
 

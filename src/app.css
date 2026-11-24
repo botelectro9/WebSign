@@ -266,3 +266,19 @@
 
 /* "File ready" dialog: three buttons may need two rows on narrow phones */
 #ready-dlg .actions { flex-wrap: wrap; }
+
+/* colour-vision menu (eye button) */
+.vision-menu .radio {
+  width: 18px; height: 18px; flex: none; border-radius: 50%;
+  border: 2px solid var(--muted); display: grid; place-items: center;
+}
+.vision-menu [aria-checked="true"] .radio { border-color: var(--brass); }
+.vision-menu [aria-checked="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--brass); }
+.vision-menu [aria-checked="true"] { color: var(--text); font-weight: 600; }
+/* with a colour-vision palette active, ink colours also show their names */
+html[data-vision] .swatches { grid-template-columns: repeat(3, auto); }
+html[data-vision] .swatch { width: auto; height: auto; min-height: 44px; padding: 4px 8px 4px 4px; border-radius: 8px; justify-content: start; display: flex; gap: 8px; font-size: 13px; color: var(--text); }
+html[data-vision] .swatch span { width: 26px; height: 26px; flex: none; }
+.swatch .sw-name { display: none; }
+html[data-vision] .swatch .sw-name { display: inline; white-space: nowrap; }
+html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }

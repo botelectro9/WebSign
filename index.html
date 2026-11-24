@@ -10,6 +10,7 @@
 <meta name="description" content="WebSign: sign a PDF or an image in your browser. Nothing is uploaded. — Signez un PDF ou une image dans votre navigateur, sans rien envoyer.">
 <title>WebSign – Sign a PDF or an image · Signer un PDF ou une image</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1.5l3 2.2 3.6-.6 1.6 3.3 3.4 1.4-.3 3.7 2.4 2.8-2 3.1.8 3.6-3.1 2-.7 3.6-3.7.3-2.3 2.9L16 30.5l-3.6 1.1-2.3-2.9-3.7-.3-.7-3.6-3.1-2 .8-3.6-2-3.1 2.4-2.8-.3-3.7 3.4-1.4 1.6-3.3 3.6.6z' fill='%23ec7a2f'/%3E%3Cpath d='M8.5 19.5c2.6-.8 3.4-7.5 5.2-7.5s.8 6.6 2.6 6.6 1.7-4 3.4-4 .9 3.3 2.6 3.3 1.6-1.4 1.6-1.4' fill='none' stroke='%231c0e04' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<script>try{var v=localStorage.getItem('websign.vision');if(v==='protan'||v==='deutan'||v==='tritan')document.documentElement.setAttribute('data-vision',v)}catch(e){}</script>
 <style>
 /* WebSign design tokens: "a writing desk at night".
    Bottle-green blotter, felt surfaces, parchment text, brass (yellow) for the signature
@@ -106,12 +107,49 @@ a.btn.primary { color: var(--wax-ink); }
   .bar { gap: 6px; }
   .brand-link span { display: none; }
 }
+
+/* ---------- colour-vision palettes (html[data-vision]) ----------
+   Standard: green / yellow / orange. Protanopia and deuteranopia (red-green) cannot tell
+   the green background, the yellow and the orange apart, so they get a navy / yellow /
+   blue scheme. Tritanopia (blue-yellow) gets a neutral dark / cyan / coral-red scheme.
+   Every text pair stays at WCAG AAA (7:1) except muted text on raised surfaces (≥ 6.3:1). */
+html[data-vision="protan"] {
+  --bg: #0d1b2e; --surface: #15263d; --surface-2: #1d3250; --surface-3: #284166;
+  --text: #f1ede2; --muted: #aab8cc;
+  --brass: #f5cf3c; --wax: #5ba4ff; --wax-hover: #7cb6ff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffc56b;
+}
+html[data-vision="deutan"] {
+  --bg: #0f1a2c; --surface: #17263b; --surface-2: #20324c; --surface-3: #2b4163;
+  --text: #f1ede2; --muted: #abb7c8;
+  --brass: #ffd23f; --wax: #4d9bff; --wax-hover: #70afff; --wax-ink: #03101f;
+  --leaf: #e8eefc; --danger: #ffb347;
+}
+html[data-vision="tritan"] {
+  --bg: #18181c; --surface: #222228; --surface-2: #2d2d35; --surface-3: #3a3a44;
+  --text: #f4efe8; --muted: #bdb8b2;
+  --brass: #5fe0e0; --wax: #ff6a5c; --wax-hover: #ff8478; --wax-ink: #1f0402;
+  --leaf: #c9f2f2; --danger: #ff9c9c;
+}
+html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink); }
+
+/* colour-vision drop-down (landing page and guides) */
+.vision-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.vision-pick .ico { width: 20px; height: 20px; color: var(--brass); }
+.vision-pick select {
+  min-height: 36px; padding: 0 30px 0 10px; font: inherit; color: var(--text);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23a8bca8' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center / 12px 8px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  -webkit-appearance: none; appearance: none; cursor: pointer; max-width: 62vw;
+}
+.vision-pick select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.vision-pick option { background: var(--surface); color: var(--text); }
 /* ---------- landing ---------- */
 .landing-main {
   max-width: 1040px; margin: 0 auto;
   padding: calc(28px + var(--safe-t)) clamp(20px, 5vw, 48px) calc(40px + var(--safe-b));
 }
-.landing-head { display: flex; align-items: center; gap: 10px; }
+.landing-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .landing-head .logo { width: 34px; height: 34px; color: var(--wax); }
 .wordmark { font: 600 24px/1 var(--serif); color: var(--text); }
 
@@ -204,6 +242,9 @@ a.btn.primary { color: var(--wax-ink); }
 .doc pre { overflow: auto; background: var(--surface-2); border: 1px solid var(--line); padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
 .doc pre code { border: 0; padding: 0; background: none; }
 .doc ul ul { margin-top: 6px; }
+
+.doc-vision { margin: 4px 0 18px; }
+@media (max-width: 520px) { .landing-head .vision-pick span { display: none; } }
 </style>
 </head>
 <body>
@@ -221,6 +262,7 @@ a.btn.primary { color: var(--wax-ink); }
     <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L13 19"/><path d="M7 21h13M5.5 12.5l6 6"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </defs>
@@ -229,6 +271,8 @@ a.btn.primary { color: var(--wax-ink); }
   <header class="landing-head">
     <svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg>
     <span class="wordmark">WebSign</span>
+    <span class="spacer"></span>
+    <label class="vision-pick"><svg class="ico" aria-hidden="true"><use href="#i-eye"/></svg><span>Colours / Couleurs</span><select id="vision-select"><option value="normal">Normal colours / Couleurs normales</option><option value="protan">Protanopia / Protanopie</option><option value="deutan">Deuteranopia / Deutéranopie</option><option value="tritan">Tritanopia / Tritanopie</option></select></label>
   </header>
 
   <section class="hero" aria-labelledby="hero-title">
@@ -275,6 +319,11 @@ a.btn.primary { color: var(--wax-ink); }
     <p lang="fr">Domaine public (Unlicense). Intègre pdf.js (Apache-2.0) et pdf-lib (MIT).</p>
   </footer>
 </main>
+<script>(function(){var s=document.getElementById('vision-select');var h=document.documentElement;
+function apply(v){if(v==='protan'||v==='deutan'||v==='tritan')h.setAttribute('data-vision',v);else{h.removeAttribute('data-vision');v='normal';}s.value=v;}
+apply(h.getAttribute('data-vision')||'normal');
+s.addEventListener('change',function(){apply(s.value);try{localStorage.setItem('websign.vision',s.value)}catch(e){}});
+window.addEventListener('storage',function(e){if(e.key==='websign.vision')apply(e.newValue);});})();</script>
 <script>
 // Show the browser's language first; both choices always stay available.
 (function () {
