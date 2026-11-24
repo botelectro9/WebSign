@@ -372,6 +372,7 @@ async function staticSuite() {
     check(rel.startsWith('app/') ? info.libs === 3 : info.libs === 0, `${rel}: embeds ${info.libs} libraries`);
     const bad = [];
     for (const href of info.links) {
+      if (href === 'https://github.com/botelectro9/WebSign' && rel === 'index.html') continue; // source code link
       if (/^[a-z]+:/i.test(href)) { bad.push(`${href} (absolute)`); continue; }
       const [path, frag] = href.split('#');
       if (!path) { if (frag && !info.ids.includes(frag)) bad.push(href); continue; }
@@ -383,6 +384,8 @@ async function staticSuite() {
   }
   // landing points to the four pages; docs cross-link
   await page.goto(fileUrl('index.html'));
+  check((await page.getAttribute('#source-link', 'href')) === 'https://github.com/botelectro9/WebSign' &&
+    (await page.evaluate(() => document.getElementById('source-link').closest('footer') !== null)), 'landing: link to the source code on GitHub in the footer');
   const landingLinks = await page.$$eval('#choices a', (as) => as.map((a) => a.getAttribute('href')));
   check(JSON.stringify(landingLinks.sort()) === JSON.stringify(['app/websign_en.html', 'app/websign_fr.html', 'doc/doc_en.html', 'doc/doc_fr.html']), 'landing links to the 4 pages');
   await page.click('#go-fr-doc');
