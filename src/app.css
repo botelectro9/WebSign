@@ -66,9 +66,13 @@
 .sigbox .edge.b { left: 0; right: 0; bottom: -9px; height: 12px; }
 .sigbox .edge.l { top: 0; bottom: 0; left: -9px; width: 12px; }
 .sigbox .edge.r { top: 0; bottom: 0; right: -9px; width: 12px; }
-.sigbox .grip {
+/* tabs above the box: Move and Full screen */
+.sigbox .tabs {
   position: absolute; left: 50%; bottom: 100%;
   transform: translate(-50%, -6px);
+  display: flex; gap: 6px;
+}
+.sigbox .grip {
   height: 26px; padding: 0 10px;
   display: flex; align-items: center; gap: 4px;
   background: var(--brass); color: var(--wax-ink);
@@ -101,7 +105,9 @@
   .sigbox .edge.b { bottom: -16px; height: 18px; }
   .sigbox .edge.l { left: -16px; width: 18px; }
   .sigbox .edge.r { right: -16px; width: 18px; }
-  .sigbox .grip { height: 32px; padding: 0 14px; transform: translate(-50%, -10px); }
+  .sigbox .tabs { transform: translate(-50%, -10px); gap: 8px; }
+  .sigbox .grip { height: 32px; padding: 0 14px; }
+  .sigbox .fs-btn { width: 40px; height: 32px; }
 }
 
 /* ---------- floating toolbar ---------- */
@@ -301,3 +307,49 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
   -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto;
 }
 .preview figcaption { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- full-screen button (on the box and in full screen) ---------- */
+.fs-btn {
+  display: grid; place-items: center;
+  width: 32px; height: 26px; padding: 0;
+  border: 0; border-radius: 6px;
+  background: var(--brass); color: var(--wax-ink);
+  box-shadow: 0 2px 8px rgba(2, 10, 6, 0.45);
+  cursor: pointer; touch-action: manipulation;
+}
+.fs-btn .ico { width: 18px; height: 18px; stroke-width: 2.2; }
+.fs-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- full-screen signing ---------- */
+.fs {
+  position: fixed; inset: 0; z-index: 35;
+  background: var(--bg);
+  touch-action: none; overscroll-behavior: contain;
+}
+html.fs-open, html.fs-open body { overflow: hidden; }
+html.fs-open .toolbar:not(.fs-bar) { visibility: hidden; }
+.fs-box { position: absolute; }
+.fs-box::before { /* same dashed outline as the box */
+  content: ""; position: absolute; inset: -3px; z-index: 2; pointer-events: none;
+  border: 2px dashed var(--brass); border-radius: 2px;
+}
+.fs-bg, .fs-ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fs-bg { border-radius: 2px; }   /* the page under the box, as a guide */
+.fs-ink { touch-action: none; cursor: crosshair; }
+.fs-ink.erasing { cursor: cell; }
+.fs-exit {
+  position: absolute; left: 50%; bottom: 100%;
+  transform: translate(-50%, -12px);
+  width: 48px; height: 40px;
+}
+.fs-exit .ico { width: 22px; height: 22px; }
+.fs-bar { z-index: 36; }
+.tb.on { background: var(--brass); color: var(--wax-ink); }
+.tb.on:hover:not(:disabled) { background: var(--brass); }
+/* brush size: a filled circle whose size shows the current brush */
+.brush-dot, .bdot {
+  display: block; width: var(--d, 10px); height: var(--d, 10px);
+  border-radius: 50%; background: currentColor;
+}
+.brush-menu .bdot { flex: none; margin: 0 calc((22px - var(--d)) / 2); }
+.brush-menu [aria-checked="true"] { color: var(--brass); font-weight: 600; }

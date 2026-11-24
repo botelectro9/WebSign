@@ -212,9 +212,13 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 .sigbox .edge.b { left: 0; right: 0; bottom: -9px; height: 12px; }
 .sigbox .edge.l { top: 0; bottom: 0; left: -9px; width: 12px; }
 .sigbox .edge.r { top: 0; bottom: 0; right: -9px; width: 12px; }
-.sigbox .grip {
+/* tabs above the box: Move and Full screen */
+.sigbox .tabs {
   position: absolute; left: 50%; bottom: 100%;
   transform: translate(-50%, -6px);
+  display: flex; gap: 6px;
+}
+.sigbox .grip {
   height: 26px; padding: 0 10px;
   display: flex; align-items: center; gap: 4px;
   background: var(--brass); color: var(--wax-ink);
@@ -247,7 +251,9 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
   .sigbox .edge.b { bottom: -16px; height: 18px; }
   .sigbox .edge.l { left: -16px; width: 18px; }
   .sigbox .edge.r { right: -16px; width: 18px; }
-  .sigbox .grip { height: 32px; padding: 0 14px; transform: translate(-50%, -10px); }
+  .sigbox .tabs { transform: translate(-50%, -10px); gap: 8px; }
+  .sigbox .grip { height: 32px; padding: 0 14px; }
+  .sigbox .fs-btn { width: 40px; height: 32px; }
 }
 
 /* ---------- floating toolbar ---------- */
@@ -447,6 +453,52 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
   -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto;
 }
 .preview figcaption { font-size: 12.5px; color: var(--muted); }
+
+/* ---------- full-screen button (on the box and in full screen) ---------- */
+.fs-btn {
+  display: grid; place-items: center;
+  width: 32px; height: 26px; padding: 0;
+  border: 0; border-radius: 6px;
+  background: var(--brass); color: var(--wax-ink);
+  box-shadow: 0 2px 8px rgba(2, 10, 6, 0.45);
+  cursor: pointer; touch-action: manipulation;
+}
+.fs-btn .ico { width: 18px; height: 18px; stroke-width: 2.2; }
+.fs-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* ---------- full-screen signing ---------- */
+.fs {
+  position: fixed; inset: 0; z-index: 35;
+  background: var(--bg);
+  touch-action: none; overscroll-behavior: contain;
+}
+html.fs-open, html.fs-open body { overflow: hidden; }
+html.fs-open .toolbar:not(.fs-bar) { visibility: hidden; }
+.fs-box { position: absolute; }
+.fs-box::before { /* same dashed outline as the box */
+  content: ""; position: absolute; inset: -3px; z-index: 2; pointer-events: none;
+  border: 2px dashed var(--brass); border-radius: 2px;
+}
+.fs-bg, .fs-ink { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.fs-bg { border-radius: 2px; }   /* the page under the box, as a guide */
+.fs-ink { touch-action: none; cursor: crosshair; }
+.fs-ink.erasing { cursor: cell; }
+.fs-exit {
+  position: absolute; left: 50%; bottom: 100%;
+  transform: translate(-50%, -12px);
+  width: 48px; height: 40px;
+}
+.fs-exit .ico { width: 22px; height: 22px; }
+.fs-bar { z-index: 36; }
+.tb.on { background: var(--brass); color: var(--wax-ink); }
+.tb.on:hover:not(:disabled) { background: var(--brass); }
+/* brush size: a filled circle whose size shows the current brush */
+.brush-dot, .bdot {
+  display: block; width: var(--d, 10px); height: var(--d, 10px);
+  border-radius: 50%; background: currentColor;
+}
+.brush-menu .bdot { flex: none; margin: 0 calc((22px - var(--d)) / 2); }
+.brush-menu [aria-checked="true"] { color: var(--brass); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -466,6 +518,8 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </defs>
@@ -514,6 +568,31 @@ html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
     <button type="button" role="menuitem" id="bm-erase"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg><span data-i18n="menu.erase">Effacer le contenu</span></button>
     <button type="button" role="menuitem" id="bm-delete" class="danger"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="menu.delete">Supprimer le cadre</span></button>
     <button type="button" role="menuitem" id="bm-cancel"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg><span data-i18n="menu.cancel">Annuler</span></button>
+  </div>
+
+  <!-- Full-screen signing: the box enlarged as much as the screen allows -->
+  <div id="fs" class="fs" role="dialog" aria-modal="true" data-i18n-aria="fs.aria" aria-label="Signature en plein écran" hidden>
+    <div class="fs-box" id="fs-box">
+      <canvas id="fs-bg" class="fs-bg" aria-hidden="true"></canvas>
+      <canvas id="fs-ink" class="fs-ink" aria-hidden="true"></canvas>
+      <button type="button" class="fs-btn fs-exit" id="fs-exit" data-i18n-aria="fs.exit" aria-label="Réduire" data-i18n-title="fs.exit" title="Réduire"><svg class="ico" aria-hidden="true"><use href="#i-shrink"/></svg></button>
+    </div>
+    <nav class="toolbar fs-bar" id="fs-bar" role="toolbar" data-i18n-aria="fs.tools" aria-label="Outils de signature en plein écran">
+      <button type="button" class="tb" id="fs-erase" data-i18n-aria="fs.erase" aria-label="Effacer le contenu" data-i18n-tip="fs.erase" data-tip="Effacer le contenu"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tb" id="fs-undo" data-i18n-aria="tb.undo" aria-label="Annuler" data-i18n-tip="tb.undoTip" data-tip="Annuler (Ctrl+Z)"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></button>
+      <button type="button" class="tb" id="fs-redo" data-i18n-aria="tb.redo" aria-label="Rétablir" data-i18n-tip="tb.redoTip" data-tip="Rétablir (Ctrl+Maj+Z)"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tb" id="fs-eraser" aria-pressed="false" data-i18n-aria="fs.eraser" aria-label="Gomme" data-i18n-tip="fs.eraser" data-tip="Gomme"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg></button>
+      <button type="button" class="tb" id="fs-brush" aria-haspopup="menu" aria-expanded="false" data-i18n-aria="fs.brush" aria-label="Taille du pinceau" data-i18n-tip="fs.brush" data-tip="Taille du pinceau"><span class="brush-dot" id="fs-brush-dot" aria-hidden="true"></span></button>
+    </nav>
+  </div>
+
+  <div id="brush-pop" class="popover menu brush-menu" role="menu" data-i18n-aria="fs.brush" aria-label="Taille du pinceau" hidden>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="0"><span class="bdot" style="--d:5px" aria-hidden="true"></span><span data-i18n="brush.0">Fin</span></button>
+    <button type="button" role="menuitemradio" aria-checked="true" data-brush="1"><span class="bdot" style="--d:9px" aria-hidden="true"></span><span data-i18n="brush.1">Moyen</span></button>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="2"><span class="bdot" style="--d:14px" aria-hidden="true"></span><span data-i18n="brush.2">Épais</span></button>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="3"><span class="bdot" style="--d:20px" aria-hidden="true"></span><span data-i18n="brush.3">Très épais</span></button>
   </div>
 
   <div id="vision-menu" class="popover menu vision-menu" role="menu" data-i18n-aria="vision.label" aria-label="Couleurs" hidden>
@@ -26762,6 +26841,20 @@ const WEBSIGN_STRINGS = {
  "color.orange": "Orange",
  "box.aria": "Cadre de signature : dessinez à l’intérieur pour signer, faites glisser l’onglet Déplacer ou la bordure pour le déplacer, faites glisser une poignée pour le redimensionner",
  "box.move": "Déplacer",
+ "box.fullscreen": "Plein écran",
+ "fs.aria": "Signature en plein écran",
+ "fs.tools": "Outils de signature en plein écran",
+ "fs.exit": "Réduire",
+ "fs.erase": "Effacer le contenu",
+ "fs.eraseTitle": "Effacer le contenu ?",
+ "fs.eraseConfirm": "Toute la signature sera effacée. Vous pourrez annuler.",
+ "fs.eraseOk": "Effacer",
+ "fs.eraser": "Gomme",
+ "fs.brush": "Taille du pinceau",
+ "brush.0": "Fin",
+ "brush.1": "Moyen",
+ "brush.2": "Épais",
+ "brush.3": "Très épais",
  "page.aria": "Page {n} sur {total}",
  "save.title": "Enregistrer",
  "save.format": "Format",
@@ -26837,6 +26930,8 @@ const WEBSIGN_STRINGS = {
     ['color.pink', '#ff5fa2'], ['color.yellow', '#ffd60a'], ['color.orange', '#f77f00'],
   ];
   const STROKE_WIDTH = 0.032;          // stroke width as a fraction of the box height
+  const BRUSHES = [0.5, 1, 1.6, 2.4];  // brush sizes (× STROKE_WIDTH): fine, medium, bold, extra bold
+  const ERASER_FACTOR = 3;             // the eraser is wider than the pen at the same size
   const MIN_BOX_PX = 36;               // minimum box size on screen (CSS px)
   const MAX_CANVAS_AREA = 16000000;    // stay below iOS Safari's ~16.7 MP canvas limit
   const MAX_CANVAS_SIDE = 8192;
@@ -26860,13 +26955,16 @@ const WEBSIGN_STRINGS = {
   const state = {
     doc: null,        // { kind, name, type, bytes, pdf, pages[], image }
     box: null,        // { page, x, y, w, h }  all in fractions of the page
-    strokes: [],      // immutable [{ color, width, points:[{x,y}] }], points in box fractions
+    strokes: [],      // immutable [{ color, width, points:[{x,y}], erase? }], points in box fractions
     color: '#000000',
+    brush: 1,         // index in BRUSHES
+    eraser: false,    // eraser mode (full-screen signing only)
     undo: [],
     redo: [],
     dirty: false,
   };
   let drawing = null;  // active stroke gesture
+  let fsOpen = false;  // full-screen signing is shown
   let gesture = null;  // active move/resize gesture
   let pageObserver = null;
   let openToken = 0;
@@ -26887,6 +26985,10 @@ const WEBSIGN_STRINGS = {
     readyName: $('ready-name'), readyExt: $('ready-ext'),
     readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
+    confirmTitle: $('confirm-title'), confirmOk: $('confirm-ok'),
+    fs: $('fs'), fsBox: $('fs-box'), fsBg: $('fs-bg'), fsInk: $('fs-ink'), fsExit: $('fs-exit'), fsBar: $('fs-bar'),
+    fsErase: $('fs-erase'), fsUndo: $('fs-undo'), fsRedo: $('fs-redo'), fsEraser: $('fs-eraser'),
+    fsBrush: $('fs-brush'), fsBrushDot: $('fs-brush-dot'), brushPop: $('brush-pop'),
   };
 
   // ---------------------------------------------------------------------------
@@ -26931,8 +27033,10 @@ const WEBSIGN_STRINGS = {
     });
   }
 
-  function confirmDialog(message) {
+  function confirmDialog(message, title = t('confirm.title'), ok = t('confirm.ok')) {
     els.confirmNote.textContent = message;
+    els.confirmTitle.textContent = title;
+    els.confirmOk.textContent = ok;
     return showDialog(els.confirmDlg).then((v) => v === 'ok');
   }
 
@@ -27300,15 +27404,31 @@ const WEBSIGN_STRINGS = {
   // ---------------------------------------------------------------------------
   // Strokes
   // ---------------------------------------------------------------------------
+  // Eraser strokes remove ink ("destination-out"). They must not erase what lies under the
+  // signature (the page, in exports), so as soon as there is one, the strokes are painted
+  // on a separate transparent layer first.
+  let layerCanvas = null;
   function drawStrokes(ctx, strokes, W, H) {
+    if (!strokes.some((s) => s.erase)) { paintStrokes(ctx, strokes, W, H); return; }
+    const lw = Math.max(1, Math.ceil(W)); const lh = Math.max(1, Math.ceil(H));
+    if (!layerCanvas) layerCanvas = document.createElement('canvas');
+    if (layerCanvas.width !== lw || layerCanvas.height !== lh) { layerCanvas.width = lw; layerCanvas.height = lh; }
+    const lctx = layerCanvas.getContext('2d');
+    lctx.clearRect(0, 0, lw, lh);
+    paintStrokes(lctx, strokes, lw, lh);
+    ctx.drawImage(layerCanvas, 0, 0, W, H);
+  }
+  function paintStrokes(ctx, strokes, W, H) {
+    ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (const s of strokes) {
       const pts = s.points;
       if (!pts.length) continue;
       const lw = Math.max(0.5, s.width * H);
-      ctx.strokeStyle = s.color;
-      ctx.fillStyle = s.color;
+      ctx.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = s.erase ? '#000' : s.color;
+      ctx.fillStyle = s.erase ? '#000' : s.color;
       const first = pts[0];
       const isDot = pts.every((p) => Math.abs(p.x - first.x) * W < 0.75 && Math.abs(p.y - first.y) * H < 0.75);
       if (isDot) {
@@ -27332,6 +27452,7 @@ const WEBSIGN_STRINGS = {
       }
       ctx.stroke();
     }
+    ctx.restore();
   }
 
   // ---------------------------------------------------------------------------
@@ -27362,7 +27483,19 @@ const WEBSIGN_STRINGS = {
     e.dataset.mode = h;
     boxEl.appendChild(e);
   }
-  boxEl.appendChild(grip);
+  // Above the box: the Move tab and, next to it, the full-screen button.
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  const fsBtn = document.createElement('button');
+  fsBtn.type = 'button';
+  fsBtn.className = 'fs-btn';
+  fsBtn.id = 'box-fullscreen';
+  fsBtn.setAttribute('aria-label', t('box.fullscreen'));
+  fsBtn.title = t('box.fullscreen');
+  fsBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-expand"/></svg>';
+  fsBtn.addEventListener('click', () => openFullscreen());
+  tabs.append(grip, fsBtn);
+  boxEl.appendChild(tabs);
   const inkCtx = ink.getContext('2d');
 
   function boxPage() {
@@ -27412,23 +27545,31 @@ const WEBSIGN_STRINGS = {
     if (!inkFrame) inkFrame = requestAnimationFrame(() => { inkFrame = 0; redrawInk(); });
   }
   function redrawInk() {
-    inkCtx.clearRect(0, 0, ink.width, ink.height);
     const list = drawing ? state.strokes.concat([drawing.stroke]) : state.strokes;
+    inkCtx.clearRect(0, 0, ink.width, ink.height);
     drawStrokes(inkCtx, list, ink.width, ink.height);
+    if (fsOpen) {
+      fsInkCtx.clearRect(0, 0, els.fsInk.width, els.fsInk.height);
+      drawStrokes(fsInkCtx, list, els.fsInk.width, els.fsInk.height);
+    }
   }
 
   // --- drawing --------------------------------------------------------------
-  ink.addEventListener('pointerdown', (e) => {
+  // The same handlers serve the box canvas and the full-screen canvas: points are stored
+  // in fractions of the canvas, which has the box's aspect ratio in both cases.
+  function onDrawDown(e) {
     if (!e.isPrimary || drawing || gesture) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     closePopovers();
-    try { ink.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-    const rect = ink.getBoundingClientRect();
-    drawing = { id: e.pointerId, rect, stroke: { color: state.color, width: STROKE_WIDTH, points: [] } };
+    const el = e.currentTarget;
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    const erase = state.eraser && fsOpen;
+    const width = STROKE_WIDTH * BRUSHES[state.brush] * (erase ? ERASER_FACTOR : 1);
+    drawing = { id: e.pointerId, rect: el.getBoundingClientRect(), stroke: { color: state.color, width, erase, points: [] } };
     addPoint(e);
     requestInk();
-  });
+  }
   function addPoint(e) {
     const r = drawing.rect;
     const pts = drawing.stroke.points;
@@ -27438,14 +27579,14 @@ const WEBSIGN_STRINGS = {
     if (last && Math.abs(last.x - x) * r.width < 0.6 && Math.abs(last.y - y) * r.height < 0.6) return;
     pts.push({ x, y });
   }
-  ink.addEventListener('pointermove', (e) => {
+  function onDrawMove(e) {
     if (!drawing || e.pointerId !== drawing.id) return;
     e.preventDefault();
     const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : null;
     if (list && list.length) for (const ce of list) addPoint(ce);
     else addPoint(e);
     requestInk();
-  });
+  }
   function finishStroke(e, keep) {
     if (!drawing || (e && e.pointerId !== drawing.id)) return;
     const stroke = drawing.stroke;
@@ -27453,14 +27594,21 @@ const WEBSIGN_STRINGS = {
     if (keep && stroke.points.length) {
       const before = snapshot();
       stroke.points.forEach(Object.freeze);
-      state.strokes = state.strokes.concat([Object.freeze({ color: stroke.color, width: stroke.width, points: Object.freeze(stroke.points) })]);
+      const kept = { color: stroke.color, width: stroke.width, points: Object.freeze(stroke.points) };
+      if (stroke.erase) kept.erase = true;
+      state.strokes = state.strokes.concat([Object.freeze(kept)]);
       pushHistory(before);
     }
     requestInk();
   }
-  ink.addEventListener('pointerup', (e) => finishStroke(e, true));
-  ink.addEventListener('pointercancel', (e) => finishStroke(e, false));
-  ink.addEventListener('lostpointercapture', (e) => finishStroke(e, true));
+  function attachDrawing(canvas) {
+    canvas.addEventListener('pointerdown', onDrawDown);
+    canvas.addEventListener('pointermove', onDrawMove);
+    canvas.addEventListener('pointerup', (e) => finishStroke(e, true));
+    canvas.addEventListener('pointercancel', (e) => finishStroke(e, false));
+    canvas.addEventListener('lostpointercapture', (e) => finishStroke(e, true));
+  }
+  attachDrawing(ink);
 
   // --- moving and resizing --------------------------------------------------
   function pageAtPoint(cx, cy) {
@@ -27562,6 +27710,7 @@ const WEBSIGN_STRINGS = {
     state.strokes = snap.strokes;
     state.dirty = true;
     placeBox();
+    if (fsOpen) { if (state.box) layoutFullscreen(); else closeFullscreen(); }
     updateUI();
   }
   function undo() {
@@ -27631,6 +27780,13 @@ const WEBSIGN_STRINGS = {
     els.tbSig.disabled = !(hasBox && state.strokes.length);
     els.tbSave.disabled = !hasDoc;
     els.bmErase.disabled = !state.strokes.length;
+    els.fsErase.disabled = !state.strokes.length;
+    els.fsUndo.disabled = !state.undo.length;
+    els.fsRedo.disabled = !state.redo.length;
+    els.fsEraser.setAttribute('aria-pressed', String(state.eraser));
+    els.fsEraser.classList.toggle('on', state.eraser);
+    els.fsInk.classList.toggle('erasing', state.eraser);
+    els.fsBrushDot.style.setProperty('--d', `${6 + state.brush * 4}px`);
   }
 
   function positionPopover(pop, anchor) {
@@ -27642,7 +27798,7 @@ const WEBSIGN_STRINGS = {
     pop.style.bottom = `${window.innerHeight - a.top + 10}px`;
   }
   function closePopovers() {
-    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision]]) {
+    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision], [els.brushPop, els.fsBrush]]) {
       if (!pop.hidden) { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
     }
   }
@@ -27748,11 +27904,13 @@ const WEBSIGN_STRINGS = {
   els.tbSave.addEventListener('click', () => openSaveDialog());
 
   document.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision')) return;
+    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision') || e.target.closest('#fs-brush')) return;
     closePopovers();
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (!els.brushPop.hidden) { closePopovers(); els.fsBrush.focus(); return; }
+      if (fsOpen && !document.querySelector('dialog[open]')) { e.preventDefault(); closeFullscreen(); return; }
       if (!els.boxMenu.hidden) { closePopovers(); els.tbBox.focus(); return; }
       if (!els.penPop.hidden) { closePopovers(); els.tbPen.focus(); return; }
       if (!els.visionMenu.hidden) { closePopovers(); els.tbVision.focus(); return; }
@@ -27768,6 +27926,119 @@ const WEBSIGN_STRINGS = {
 
   window.addEventListener('beforeunload', (e) => {
     if (hasWork()) { e.preventDefault(); e.returnValue = t('unload'); }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Full-screen signing: the box enlarged to the largest size that fits the screen,
+  // keeping its aspect ratio, with erase / undo / redo / eraser / brush size.
+  // ---------------------------------------------------------------------------
+  const fsInkCtx = els.fsInk.getContext('2d');
+  attachDrawing(els.fsInk);
+  els.fsInk.addEventListener('contextmenu', (e) => e.preventDefault());
+  let fsRequestedScreen = false;
+
+  function openFullscreen() {
+    if (!state.box || fsOpen) return;
+    closePopovers();
+    fsOpen = true;
+    els.fs.hidden = false;
+    document.documentElement.classList.add('fs-open');
+    layoutFullscreen();
+    updateUI();
+    els.fsExit.focus({ preventScroll: true });
+    // Also hide the browser's own bars where allowed (Android, desktop). iPhone does not
+    // allow it; the overlay alone then fills the page.
+    const root = document.documentElement;
+    if (root.requestFullscreen && !document.fullscreenElement) {
+      root.requestFullscreen({ navigationUI: 'hide' }).then(() => { fsRequestedScreen = true; }).catch(() => {});
+    }
+  }
+
+  function closeFullscreen() {
+    if (!fsOpen) return;
+    if (drawing) finishStroke(null, true);
+    closePopovers();
+    fsOpen = false;
+    state.eraser = false;
+    els.fs.hidden = true;
+    document.documentElement.classList.remove('fs-open');
+    if (fsRequestedScreen && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    fsRequestedScreen = false;
+    updateUI();
+    redrawInk();
+    if (fsBtn.isConnected) fsBtn.focus({ preventScroll: true });
+  }
+
+  function layoutFullscreen() {
+    if (!fsOpen || !state.box) return;
+    const vv = window.visualViewport;
+    const vw = vv ? vv.width : window.innerWidth;
+    const vh = vv ? vv.height : window.innerHeight;
+    const top = els.fsExit.offsetHeight + 28;               // room for the reduce button
+    const bottom = els.fsBar.offsetHeight + 28;              // room for the bar
+    const availW = Math.max(60, vw - 24);
+    const availH = Math.max(40, vh - top - bottom);
+    const [bw, bh] = boxCssSize();
+    const ratio = bw / bh;
+    let w = availW; let h = w / ratio;
+    if (h > availH) { h = availH; w = h * ratio; }
+    els.fsBox.style.width = `${w}px`;
+    els.fsBox.style.height = `${h}px`;
+    els.fsBox.style.top = `${top + (availH - h) / 2}px`;
+    els.fsBox.style.left = `${(vw - w) / 2}px`;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const [cw, ch] = capSize(Math.max(1, Math.round(w * dpr)), Math.max(1, Math.round(h * dpr)));
+    for (const c of [els.fsBg, els.fsInk]) {
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+    }
+    paintFullscreenBackground();
+    redrawInk();
+  }
+
+  // The part of the page under the box, enlarged, as a guide (dimmed in CSS).
+  function paintFullscreenBackground() {
+    const ctx = els.fsBg.getContext('2d');
+    const W = els.fsBg.width; const H = els.fsBg.height;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    const page = boxPage();
+    const box = state.box;
+    let src = null; let sw = 0; let sh = 0;
+    if (page && page.canvas && page.canvas.width) { src = page.canvas; sw = page.canvas.width; sh = page.canvas.height; }
+    else if (state.doc && state.doc.kind === 'image' && state.doc.image) { src = state.doc.image.source; sw = page.baseW; sh = page.baseH; }
+    if (!src) return;
+    ctx.imageSmoothingQuality = 'high';
+    try { ctx.drawImage(src, box.x * sw, box.y * sh, box.w * sw, box.h * sh, 0, 0, W, H); } catch (err) { /* not ready */ }
+  }
+
+  window.addEventListener('resize', () => { if (fsOpen) layoutFullscreen(); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (fsOpen) layoutFullscreen(); });
+
+  els.fsExit.addEventListener('click', closeFullscreen);
+  els.fsUndo.addEventListener('click', undo);
+  els.fsRedo.addEventListener('click', redo);
+  els.fsErase.addEventListener('click', async () => {
+    if (!state.strokes.length) return;
+    closePopovers();
+    if (await confirmDialog(t('fs.eraseConfirm'), t('fs.eraseTitle'), t('fs.eraseOk'))) eraseContent();
+  });
+  els.fsEraser.addEventListener('click', () => { closePopovers(); state.eraser = !state.eraser; updateUI(); });
+  els.fsBrush.addEventListener('click', () => togglePopover(els.brushPop, els.fsBrush, '[aria-checked="true"]'));
+  for (const b of els.brushPop.querySelectorAll('[data-brush]')) {
+    b.addEventListener('click', () => {
+      state.brush = Number(b.dataset.brush);
+      for (const o of els.brushPop.querySelectorAll('[data-brush]')) o.setAttribute('aria-checked', String(o === b));
+      closePopovers();
+      updateUI();
+      els.fsBrush.focus();
+    });
+  }
+  els.brushPop.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...els.brushPop.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
   });
 
   // ---------------------------------------------------------------------------
@@ -28324,6 +28595,10 @@ const WEBSIGN_STRINGS = {
       get rendered() { return state.doc ? state.doc.pages.map((p) => !!p.renderedKey) : []; },
       get canUndo() { return state.undo.length > 0; },
       get canRedo() { return state.redo.length > 0; },
+      get brush() { return state.brush; },
+      get eraser() { return state.eraser; },
+      get fullscreen() { return fsOpen; },
+      STROKE_WIDTH, BRUSHES, ERASER_FACTOR,
       t,
     }),
   });

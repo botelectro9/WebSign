@@ -24,6 +24,10 @@ place a signature box, sign inside it with your mouse or your finger, and save t
    onto another page); drag one of the 8 handles to resize it.
 4. **Sign** — draw inside the box with the mouse (computer) or one finger (phone, tablet).
    Outside the box the page scrolls and zooms as usual.
+
+   **Full screen** — the button next to *Move* enlarges the box to the whole screen
+   (proportions kept) with *Erase content* (with confirmation), *Undo*, *Redo*, an
+   *Eraser* and four *Brush sizes*; *Reduce* or `Esc` returns to the document.
 5. **Colours** — the *Pen* button offers black (default), white, grey, dark blue, red,
    green, pink, yellow and orange.
 6. **Undo / redo** — toolbar buttons, or `Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z` (or `Ctrl+Y`).
@@ -78,6 +82,11 @@ doigt, puis enregistrez le résultat.
    l’une des 8 poignées pour le redimensionner.
 4. **Signer** — dessinez dans le cadre à la souris (ordinateur) ou avec un doigt
    (téléphone, tablette). En dehors du cadre, la page défile et se zoome normalement.
+
+   **Plein écran** — le bouton à côté de *Déplacer* agrandit le cadre à tout l’écran
+   (proportions conservées) avec *Effacer le contenu* (après confirmation), *Annuler*,
+   *Rétablir*, une *Gomme* et quatre *Tailles de pinceau*&nbsp;; *Réduire* ou `Échap`
+   ramène au document.
 5. **Couleurs** — le bouton *Stylo* propose noir (par défaut), blanc, gris, bleu foncé,
    rouge, vert, rose, jaune et orange.
 6. **Annuler / rétablir** — boutons de la barre, ou `Ctrl/Cmd+Z` et `Ctrl/Cmd+Maj+Z`

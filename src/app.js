@@ -18,6 +18,8 @@
     ['color.pink', '#ff5fa2'], ['color.yellow', '#ffd60a'], ['color.orange', '#f77f00'],
   ];
   const STROKE_WIDTH = 0.032;          // stroke width as a fraction of the box height
+  const BRUSHES = [0.5, 1, 1.6, 2.4];  // brush sizes (× STROKE_WIDTH): fine, medium, bold, extra bold
+  const ERASER_FACTOR = 3;             // the eraser is wider than the pen at the same size
   const MIN_BOX_PX = 36;               // minimum box size on screen (CSS px)
   const MAX_CANVAS_AREA = 16000000;    // stay below iOS Safari's ~16.7 MP canvas limit
   const MAX_CANVAS_SIDE = 8192;
@@ -41,13 +43,16 @@
   const state = {
     doc: null,        // { kind, name, type, bytes, pdf, pages[], image }
     box: null,        // { page, x, y, w, h }  all in fractions of the page
-    strokes: [],      // immutable [{ color, width, points:[{x,y}] }], points in box fractions
+    strokes: [],      // immutable [{ color, width, points:[{x,y}], erase? }], points in box fractions
     color: '#000000',
+    brush: 1,         // index in BRUSHES
+    eraser: false,    // eraser mode (full-screen signing only)
     undo: [],
     redo: [],
     dirty: false,
   };
   let drawing = null;  // active stroke gesture
+  let fsOpen = false;  // full-screen signing is shown
   let gesture = null;  // active move/resize gesture
   let pageObserver = null;
   let openToken = 0;
@@ -68,6 +73,10 @@
     readyName: $('ready-name'), readyExt: $('ready-ext'),
     readyHint: $('ready-hint'), readyPreview: $('ready-preview'), readyImg: $('ready-img'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
+    confirmTitle: $('confirm-title'), confirmOk: $('confirm-ok'),
+    fs: $('fs'), fsBox: $('fs-box'), fsBg: $('fs-bg'), fsInk: $('fs-ink'), fsExit: $('fs-exit'), fsBar: $('fs-bar'),
+    fsErase: $('fs-erase'), fsUndo: $('fs-undo'), fsRedo: $('fs-redo'), fsEraser: $('fs-eraser'),
+    fsBrush: $('fs-brush'), fsBrushDot: $('fs-brush-dot'), brushPop: $('brush-pop'),
   };
 
   // ---------------------------------------------------------------------------
@@ -112,8 +121,10 @@
     });
   }
 
-  function confirmDialog(message) {
+  function confirmDialog(message, title = t('confirm.title'), ok = t('confirm.ok')) {
     els.confirmNote.textContent = message;
+    els.confirmTitle.textContent = title;
+    els.confirmOk.textContent = ok;
     return showDialog(els.confirmDlg).then((v) => v === 'ok');
   }
 
@@ -481,15 +492,31 @@
   // ---------------------------------------------------------------------------
   // Strokes
   // ---------------------------------------------------------------------------
+  // Eraser strokes remove ink ("destination-out"). They must not erase what lies under the
+  // signature (the page, in exports), so as soon as there is one, the strokes are painted
+  // on a separate transparent layer first.
+  let layerCanvas = null;
   function drawStrokes(ctx, strokes, W, H) {
+    if (!strokes.some((s) => s.erase)) { paintStrokes(ctx, strokes, W, H); return; }
+    const lw = Math.max(1, Math.ceil(W)); const lh = Math.max(1, Math.ceil(H));
+    if (!layerCanvas) layerCanvas = document.createElement('canvas');
+    if (layerCanvas.width !== lw || layerCanvas.height !== lh) { layerCanvas.width = lw; layerCanvas.height = lh; }
+    const lctx = layerCanvas.getContext('2d');
+    lctx.clearRect(0, 0, lw, lh);
+    paintStrokes(lctx, strokes, lw, lh);
+    ctx.drawImage(layerCanvas, 0, 0, W, H);
+  }
+  function paintStrokes(ctx, strokes, W, H) {
+    ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (const s of strokes) {
       const pts = s.points;
       if (!pts.length) continue;
       const lw = Math.max(0.5, s.width * H);
-      ctx.strokeStyle = s.color;
-      ctx.fillStyle = s.color;
+      ctx.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = s.erase ? '#000' : s.color;
+      ctx.fillStyle = s.erase ? '#000' : s.color;
       const first = pts[0];
       const isDot = pts.every((p) => Math.abs(p.x - first.x) * W < 0.75 && Math.abs(p.y - first.y) * H < 0.75);
       if (isDot) {
@@ -513,6 +540,7 @@
       }
       ctx.stroke();
     }
+    ctx.restore();
   }
 
   // ---------------------------------------------------------------------------
@@ -543,7 +571,19 @@
     e.dataset.mode = h;
     boxEl.appendChild(e);
   }
-  boxEl.appendChild(grip);
+  // Above the box: the Move tab and, next to it, the full-screen button.
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  const fsBtn = document.createElement('button');
+  fsBtn.type = 'button';
+  fsBtn.className = 'fs-btn';
+  fsBtn.id = 'box-fullscreen';
+  fsBtn.setAttribute('aria-label', t('box.fullscreen'));
+  fsBtn.title = t('box.fullscreen');
+  fsBtn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-expand"/></svg>';
+  fsBtn.addEventListener('click', () => openFullscreen());
+  tabs.append(grip, fsBtn);
+  boxEl.appendChild(tabs);
   const inkCtx = ink.getContext('2d');
 
   function boxPage() {
@@ -593,23 +633,31 @@
     if (!inkFrame) inkFrame = requestAnimationFrame(() => { inkFrame = 0; redrawInk(); });
   }
   function redrawInk() {
-    inkCtx.clearRect(0, 0, ink.width, ink.height);
     const list = drawing ? state.strokes.concat([drawing.stroke]) : state.strokes;
+    inkCtx.clearRect(0, 0, ink.width, ink.height);
     drawStrokes(inkCtx, list, ink.width, ink.height);
+    if (fsOpen) {
+      fsInkCtx.clearRect(0, 0, els.fsInk.width, els.fsInk.height);
+      drawStrokes(fsInkCtx, list, els.fsInk.width, els.fsInk.height);
+    }
   }
 
   // --- drawing --------------------------------------------------------------
-  ink.addEventListener('pointerdown', (e) => {
+  // The same handlers serve the box canvas and the full-screen canvas: points are stored
+  // in fractions of the canvas, which has the box's aspect ratio in both cases.
+  function onDrawDown(e) {
     if (!e.isPrimary || drawing || gesture) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     closePopovers();
-    try { ink.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-    const rect = ink.getBoundingClientRect();
-    drawing = { id: e.pointerId, rect, stroke: { color: state.color, width: STROKE_WIDTH, points: [] } };
+    const el = e.currentTarget;
+    try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    const erase = state.eraser && fsOpen;
+    const width = STROKE_WIDTH * BRUSHES[state.brush] * (erase ? ERASER_FACTOR : 1);
+    drawing = { id: e.pointerId, rect: el.getBoundingClientRect(), stroke: { color: state.color, width, erase, points: [] } };
     addPoint(e);
     requestInk();
-  });
+  }
   function addPoint(e) {
     const r = drawing.rect;
     const pts = drawing.stroke.points;
@@ -619,14 +667,14 @@
     if (last && Math.abs(last.x - x) * r.width < 0.6 && Math.abs(last.y - y) * r.height < 0.6) return;
     pts.push({ x, y });
   }
-  ink.addEventListener('pointermove', (e) => {
+  function onDrawMove(e) {
     if (!drawing || e.pointerId !== drawing.id) return;
     e.preventDefault();
     const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : null;
     if (list && list.length) for (const ce of list) addPoint(ce);
     else addPoint(e);
     requestInk();
-  });
+  }
   function finishStroke(e, keep) {
     if (!drawing || (e && e.pointerId !== drawing.id)) return;
     const stroke = drawing.stroke;
@@ -634,14 +682,21 @@
     if (keep && stroke.points.length) {
       const before = snapshot();
       stroke.points.forEach(Object.freeze);
-      state.strokes = state.strokes.concat([Object.freeze({ color: stroke.color, width: stroke.width, points: Object.freeze(stroke.points) })]);
+      const kept = { color: stroke.color, width: stroke.width, points: Object.freeze(stroke.points) };
+      if (stroke.erase) kept.erase = true;
+      state.strokes = state.strokes.concat([Object.freeze(kept)]);
       pushHistory(before);
     }
     requestInk();
   }
-  ink.addEventListener('pointerup', (e) => finishStroke(e, true));
-  ink.addEventListener('pointercancel', (e) => finishStroke(e, false));
-  ink.addEventListener('lostpointercapture', (e) => finishStroke(e, true));
+  function attachDrawing(canvas) {
+    canvas.addEventListener('pointerdown', onDrawDown);
+    canvas.addEventListener('pointermove', onDrawMove);
+    canvas.addEventListener('pointerup', (e) => finishStroke(e, true));
+    canvas.addEventListener('pointercancel', (e) => finishStroke(e, false));
+    canvas.addEventListener('lostpointercapture', (e) => finishStroke(e, true));
+  }
+  attachDrawing(ink);
 
   // --- moving and resizing --------------------------------------------------
   function pageAtPoint(cx, cy) {
@@ -743,6 +798,7 @@
     state.strokes = snap.strokes;
     state.dirty = true;
     placeBox();
+    if (fsOpen) { if (state.box) layoutFullscreen(); else closeFullscreen(); }
     updateUI();
   }
   function undo() {
@@ -812,6 +868,13 @@
     els.tbSig.disabled = !(hasBox && state.strokes.length);
     els.tbSave.disabled = !hasDoc;
     els.bmErase.disabled = !state.strokes.length;
+    els.fsErase.disabled = !state.strokes.length;
+    els.fsUndo.disabled = !state.undo.length;
+    els.fsRedo.disabled = !state.redo.length;
+    els.fsEraser.setAttribute('aria-pressed', String(state.eraser));
+    els.fsEraser.classList.toggle('on', state.eraser);
+    els.fsInk.classList.toggle('erasing', state.eraser);
+    els.fsBrushDot.style.setProperty('--d', `${6 + state.brush * 4}px`);
   }
 
   function positionPopover(pop, anchor) {
@@ -823,7 +886,7 @@
     pop.style.bottom = `${window.innerHeight - a.top + 10}px`;
   }
   function closePopovers() {
-    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision]]) {
+    for (const [pop, btn] of [[els.boxMenu, els.tbBox], [els.penPop, els.tbPen], [els.visionMenu, els.tbVision], [els.brushPop, els.fsBrush]]) {
       if (!pop.hidden) { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); }
     }
   }
@@ -929,11 +992,13 @@
   els.tbSave.addEventListener('click', () => openSaveDialog());
 
   document.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision')) return;
+    if (e.target.closest('.popover') || e.target.closest('#tb-box') || e.target.closest('#tb-pen') || e.target.closest('#tb-vision') || e.target.closest('#fs-brush')) return;
     closePopovers();
   }, true);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (!els.brushPop.hidden) { closePopovers(); els.fsBrush.focus(); return; }
+      if (fsOpen && !document.querySelector('dialog[open]')) { e.preventDefault(); closeFullscreen(); return; }
       if (!els.boxMenu.hidden) { closePopovers(); els.tbBox.focus(); return; }
       if (!els.penPop.hidden) { closePopovers(); els.tbPen.focus(); return; }
       if (!els.visionMenu.hidden) { closePopovers(); els.tbVision.focus(); return; }
@@ -949,6 +1014,119 @@
 
   window.addEventListener('beforeunload', (e) => {
     if (hasWork()) { e.preventDefault(); e.returnValue = t('unload'); }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Full-screen signing: the box enlarged to the largest size that fits the screen,
+  // keeping its aspect ratio, with erase / undo / redo / eraser / brush size.
+  // ---------------------------------------------------------------------------
+  const fsInkCtx = els.fsInk.getContext('2d');
+  attachDrawing(els.fsInk);
+  els.fsInk.addEventListener('contextmenu', (e) => e.preventDefault());
+  let fsRequestedScreen = false;
+
+  function openFullscreen() {
+    if (!state.box || fsOpen) return;
+    closePopovers();
+    fsOpen = true;
+    els.fs.hidden = false;
+    document.documentElement.classList.add('fs-open');
+    layoutFullscreen();
+    updateUI();
+    els.fsExit.focus({ preventScroll: true });
+    // Also hide the browser's own bars where allowed (Android, desktop). iPhone does not
+    // allow it; the overlay alone then fills the page.
+    const root = document.documentElement;
+    if (root.requestFullscreen && !document.fullscreenElement) {
+      root.requestFullscreen({ navigationUI: 'hide' }).then(() => { fsRequestedScreen = true; }).catch(() => {});
+    }
+  }
+
+  function closeFullscreen() {
+    if (!fsOpen) return;
+    if (drawing) finishStroke(null, true);
+    closePopovers();
+    fsOpen = false;
+    state.eraser = false;
+    els.fs.hidden = true;
+    document.documentElement.classList.remove('fs-open');
+    if (fsRequestedScreen && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    fsRequestedScreen = false;
+    updateUI();
+    redrawInk();
+    if (fsBtn.isConnected) fsBtn.focus({ preventScroll: true });
+  }
+
+  function layoutFullscreen() {
+    if (!fsOpen || !state.box) return;
+    const vv = window.visualViewport;
+    const vw = vv ? vv.width : window.innerWidth;
+    const vh = vv ? vv.height : window.innerHeight;
+    const top = els.fsExit.offsetHeight + 28;               // room for the reduce button
+    const bottom = els.fsBar.offsetHeight + 28;              // room for the bar
+    const availW = Math.max(60, vw - 24);
+    const availH = Math.max(40, vh - top - bottom);
+    const [bw, bh] = boxCssSize();
+    const ratio = bw / bh;
+    let w = availW; let h = w / ratio;
+    if (h > availH) { h = availH; w = h * ratio; }
+    els.fsBox.style.width = `${w}px`;
+    els.fsBox.style.height = `${h}px`;
+    els.fsBox.style.top = `${top + (availH - h) / 2}px`;
+    els.fsBox.style.left = `${(vw - w) / 2}px`;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const [cw, ch] = capSize(Math.max(1, Math.round(w * dpr)), Math.max(1, Math.round(h * dpr)));
+    for (const c of [els.fsBg, els.fsInk]) {
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+    }
+    paintFullscreenBackground();
+    redrawInk();
+  }
+
+  // The part of the page under the box, enlarged, as a guide (dimmed in CSS).
+  function paintFullscreenBackground() {
+    const ctx = els.fsBg.getContext('2d');
+    const W = els.fsBg.width; const H = els.fsBg.height;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    const page = boxPage();
+    const box = state.box;
+    let src = null; let sw = 0; let sh = 0;
+    if (page && page.canvas && page.canvas.width) { src = page.canvas; sw = page.canvas.width; sh = page.canvas.height; }
+    else if (state.doc && state.doc.kind === 'image' && state.doc.image) { src = state.doc.image.source; sw = page.baseW; sh = page.baseH; }
+    if (!src) return;
+    ctx.imageSmoothingQuality = 'high';
+    try { ctx.drawImage(src, box.x * sw, box.y * sh, box.w * sw, box.h * sh, 0, 0, W, H); } catch (err) { /* not ready */ }
+  }
+
+  window.addEventListener('resize', () => { if (fsOpen) layoutFullscreen(); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (fsOpen) layoutFullscreen(); });
+
+  els.fsExit.addEventListener('click', closeFullscreen);
+  els.fsUndo.addEventListener('click', undo);
+  els.fsRedo.addEventListener('click', redo);
+  els.fsErase.addEventListener('click', async () => {
+    if (!state.strokes.length) return;
+    closePopovers();
+    if (await confirmDialog(t('fs.eraseConfirm'), t('fs.eraseTitle'), t('fs.eraseOk'))) eraseContent();
+  });
+  els.fsEraser.addEventListener('click', () => { closePopovers(); state.eraser = !state.eraser; updateUI(); });
+  els.fsBrush.addEventListener('click', () => togglePopover(els.brushPop, els.fsBrush, '[aria-checked="true"]'));
+  for (const b of els.brushPop.querySelectorAll('[data-brush]')) {
+    b.addEventListener('click', () => {
+      state.brush = Number(b.dataset.brush);
+      for (const o of els.brushPop.querySelectorAll('[data-brush]')) o.setAttribute('aria-checked', String(o === b));
+      closePopovers();
+      updateUI();
+      els.fsBrush.focus();
+    });
+  }
+  els.brushPop.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const items = [...els.brushPop.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
   });
 
   // ---------------------------------------------------------------------------
@@ -1505,6 +1683,10 @@
       get rendered() { return state.doc ? state.doc.pages.map((p) => !!p.renderedKey) : []; },
       get canUndo() { return state.undo.length > 0; },
       get canRedo() { return state.redo.length > 0; },
+      get brush() { return state.brush; },
+      get eraser() { return state.eraser; },
+      get fullscreen() { return fsOpen; },
+      STROKE_WIDTH, BRUSHES, ERASER_FACTOR,
       t,
     }),
   });

@@ -271,6 +271,8 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </defs>
@@ -291,6 +293,7 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
       <li><a href="#ouvrir">Ouvrir un fichier</a></li>
       <li><a href="#cadre">Le cadre de signature</a></li>
       <li><a href="#signer">Signer à la souris ou au doigt</a></li>
+      <li><a href="#plein-ecran">Signer en plein écran</a></li>
       <li><a href="#couleurs">Couleurs de l’encre</a></li>
       <li><a href="#annuler">Annuler et rétablir</a></li>
       <li><a href="#enregistrer-signature">Enregistrer la signature en PNG</a></li>
@@ -377,6 +380,17 @@ html[data-vision] ::selection { background: var(--brass); color: var(--wax-ink);
 </ul>
 <p>Un seul doigt dessine à la fois&#8239;: un deuxième doigt ou la paume sont ignorés pendant le tracé. Un simple appui ou clic fait un point. L’encre qui dépasse du cadre est coupée au bord.</p>
 <p>L’épaisseur du trait est proportionnelle à la hauteur du cadre&#8239;: la signature garde le même aspect quel que soit le niveau de zoom.</p>
+
+<h2 id="plein-ecran">Signer en plein écran</h2>
+<p>Pour signer avec le plus de place possible, touchez le bouton <strong>Plein écran</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-expand"/></svg></span> à côté de l’onglet <strong>Déplacer</strong>, au-dessus du cadre. Le cadre est agrandi à la plus grande taille que permet l’écran, en gardant ses proportions, avec la partie du document qu’il recouvre affichée comme repère. Sur téléphone, tournez-le à l’horizontale pour agrandir un cadre large. Touchez le bouton <strong>Réduire</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-shrink"/></svg></span> au-dessus de la zone agrandie, ou appuyez sur <kbd>Échap</kbd>, pour revenir au document.</p>
+<p>En plein écran, une barre sous la zone de signature propose&#8239;:</p>
+<ul>
+  <li><strong>Effacer le contenu</strong> (corbeille)&#8239;: efface toute la signature, après confirmation&#8239;;</li>
+  <li><strong>Annuler</strong> et <strong>Rétablir</strong>&#8239;;</li>
+  <li><strong>Gomme</strong>&#8239;: tant qu’elle est en surbrillance, dessiner enlève l’encre au lieu d’en ajouter (seulement l’encre, jamais le document). Touchez-la de nouveau pour revenir au stylo&#8239;;</li>
+  <li><strong>Taille du pinceau</strong> (rond plein)&#8239;: choisissez <em>Fin</em>, <em>Moyen</em> (par défaut), <em>Épais</em> ou <em>Très épais</em>. La taille s’applique aux traits suivants et à la gomme, trois fois plus large que le stylo.</li>
+</ul>
+<p>Tout ce que vous faites en plein écran apparaît au même endroit dans le cadre, et peut aussi être annulé depuis la barre d’outils principale.</p>
 
 <h2 id="couleurs">Couleurs de l’encre</h2>
 <p>Touchez le bouton <strong>Stylo</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg></span> et choisissez l’une des neuf couleurs&#8239;: noir (par défaut), blanc, gris, bleu foncé, rouge, vert, rose, jaune et orange.</p>

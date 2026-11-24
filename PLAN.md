@@ -210,3 +210,14 @@ not receive the `download` attribute). Its `showSaveFilePicker` exists but rejec
 with AbortError without showing anything; a near-instant AbortError (< 600 ms) is therefore
 treated as "no picker" and the small Save as window is shown instead. (A `name=` parameter
 in the data: URL was tried and reverted: it may have broken DuckDuckGo's download.)
+
+## Full-screen signing (branch `feature/fullscreen-signing`)
+
+A full-screen button next to the Move tab opens an overlay where the box is enlarged to the
+largest size that fits (aspect ratio kept), over a crop of the page as a guide; the button
+becomes *Reduce* above the area (Esc also closes; the Fullscreen API hides browser bars
+where allowed). A bar offers Erase content (confirmation), Undo, Redo, Eraser (toggle)
+and Brush size (Fine / Medium / Bold / Extra bold = 0.5 / 1 / 1.6 / 2.4 × the base
+width). Eraser strokes are stored like pen strokes with `erase: true` (3× wider) and
+painted with `destination-out` on a separate layer, so they remove ink only, never the
+document, on screen and in every export. Same history as the main view.

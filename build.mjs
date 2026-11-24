@@ -146,6 +146,7 @@ function resolveStrings(html, dict, label) {
   html = html.replace(/(<([a-z0-9]+)\b[^>]*\sdata-i18n="([\w.]+)"[^>]*>)(<\/\2>)/g, (m, open, tag, key, close) => open + need(key) + close);
   html = html.replace(/\sdata-i18n-aria="([\w.]+)"/g, (m, key) => `${m} aria-label="${need(key)}"`);
   html = html.replace(/\sdata-i18n-tip="([\w.]+)"/g, (m, key) => `${m} data-tip="${need(key)}"`);
+  html = html.replace(/\sdata-i18n-title="([\w.]+)"/g, (m, key) => `${m} title="${need(key)}"`);
   return html;
 }
 

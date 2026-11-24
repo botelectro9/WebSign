@@ -63,6 +63,31 @@
     <button type="button" role="menuitem" id="bm-cancel"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg><span data-i18n="menu.cancel"></span></button>
   </div>
 
+  <!-- Full-screen signing: the box enlarged as much as the screen allows -->
+  <div id="fs" class="fs" role="dialog" aria-modal="true" data-i18n-aria="fs.aria" hidden>
+    <div class="fs-box" id="fs-box">
+      <canvas id="fs-bg" class="fs-bg" aria-hidden="true"></canvas>
+      <canvas id="fs-ink" class="fs-ink" aria-hidden="true"></canvas>
+      <button type="button" class="fs-btn fs-exit" id="fs-exit" data-i18n-aria="fs.exit" data-i18n-title="fs.exit"><svg class="ico" aria-hidden="true"><use href="#i-shrink"/></svg></button>
+    </div>
+    <nav class="toolbar fs-bar" id="fs-bar" role="toolbar" data-i18n-aria="fs.tools">
+      <button type="button" class="tb" id="fs-erase" data-i18n-aria="fs.erase" data-i18n-tip="fs.erase"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tb" id="fs-undo" data-i18n-aria="tb.undo" data-i18n-tip="tb.undoTip"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></button>
+      <button type="button" class="tb" id="fs-redo" data-i18n-aria="tb.redo" data-i18n-tip="tb.redoTip"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tb" id="fs-eraser" aria-pressed="false" data-i18n-aria="fs.eraser" data-i18n-tip="fs.eraser"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg></button>
+      <button type="button" class="tb" id="fs-brush" aria-haspopup="menu" aria-expanded="false" data-i18n-aria="fs.brush" data-i18n-tip="fs.brush"><span class="brush-dot" id="fs-brush-dot" aria-hidden="true"></span></button>
+    </nav>
+  </div>
+
+  <div id="brush-pop" class="popover menu brush-menu" role="menu" data-i18n-aria="fs.brush" hidden>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="0"><span class="bdot" style="--d:5px" aria-hidden="true"></span><span data-i18n="brush.0"></span></button>
+    <button type="button" role="menuitemradio" aria-checked="true" data-brush="1"><span class="bdot" style="--d:9px" aria-hidden="true"></span><span data-i18n="brush.1"></span></button>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="2"><span class="bdot" style="--d:14px" aria-hidden="true"></span><span data-i18n="brush.2"></span></button>
+    <button type="button" role="menuitemradio" aria-checked="false" data-brush="3"><span class="bdot" style="--d:20px" aria-hidden="true"></span><span data-i18n="brush.3"></span></button>
+  </div>
+
   <div id="vision-menu" class="popover menu vision-menu" role="menu" data-i18n-aria="vision.label" hidden>
     <button type="button" role="menuitemradio" data-vision="normal"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.normal"></span></button>
     <button type="button" role="menuitemradio" data-vision="protan"><span class="radio" aria-hidden="true"></span><span data-i18n="vision.protan"></span></button>

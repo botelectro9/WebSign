@@ -293,6 +293,17 @@ const ANALYSE = async ({ src, box, page }) => {
   return { W, H, ...q };
 };
 
+/** RGBA at box-relative fractional points of an image file. */
+async function pixelsAt(page, bytes, type, pts) {
+  return page.evaluate(async ({ b64, type, pts }) => {
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const bmp = await createImageBitmap(new Blob([bin], { type }));
+    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+    return pts.map(([fx, fy]) => [...ctx.getImageData(Math.min(bmp.width - 1, Math.floor(fx * bmp.width)), Math.min(bmp.height - 1, Math.floor(fy * bmp.height)), 1, 1).data]);
+  }, { b64: Buffer.from(bytes).toString('base64'), type, pts });
+}
+
 async function analyseBytes(page, bytes, type, box) {
   return page.evaluate(ANALYSE, { src: { b64: Buffer.from(bytes).toString('base64'), type }, box });
 }
@@ -802,6 +813,20 @@ async function appSuite(lang) {
   const ms = await m.evaluate(() => window.__websign.strokes);
   check(ms.length === 1 && ms[0].points.length > 10, `finger stroke recorded (${ms[0] && ms[0].points.length} points)`);
   check((await m.evaluate(() => window.scrollY)) === scroll0, 'drawing inside the box does not scroll the page');
+  // full-screen signing by finger
+  await m.tap('#box-fullscreen');
+  check(await m.evaluate(() => window.__websign.fullscreen) && await m.isVisible('#fs-ink'), 'phone: full-screen button opens full-screen signing');
+  const mfs = await rectOf(m, '#fs-box');
+  const mbx = await rectOf(m, '.sigbox');
+  check(Math.abs(mfs.width / mfs.height - mbx.width / mbx.height) < 0.01 * (mbx.width / mbx.height) && mfs.width > mbx.width * 1.5 && mfs.x >= 0 && mfs.x + mfs.width <= 390,
+    `phone: full-screen area keeps the box aspect ratio and fills the width (${mfs.width.toFixed(0)}x${mfs.height.toFixed(0)})`);
+  const mbar = await rectOf(m, '#fs-bar');
+  check(mbar.x >= 0 && mbar.x + mbar.width <= 390 && mbar.y >= mfs.y + mfs.height, 'phone: full-screen tools fit and sit below the signing area');
+  await touch(signaturePath(mfs));
+  check((await m.evaluate(() => window.__websign.strokes.length)) === 2, 'phone: finger stroke recorded in full screen');
+  await m.screenshot({ path: join(SHOTS, `${lang}-mobile-fullscreen.png`) });
+  await m.tap('#fs-exit');
+  check(!(await m.evaluate(() => window.__websign.fullscreen)) && await m.isHidden('#fs'), 'phone: Reduce returns to the document');
   await m.screenshot({ path: join(SHOTS, `${lang}-mobile-signed.png`) });
   await m.tap('#tb-box');
   await m.screenshot({ path: join(SHOTS, `${lang}-mobile-box-menu.png`) });
@@ -912,6 +937,93 @@ async function appSuite(lang) {
   const wsig = await downloadFrom(w, () => w.click('#tb-sig'));
   check(wsig.name === 'signature.png' && wsig.bytes[0] === 0x89, 'signature PNG also downloadable in the WebView');
   await wctx.close();
+
+  // =========================================================================
+  section(`[${lang}] full-screen signing: aspect ratio, undo/redo, brush sizes, eraser, erase content`);
+  const zctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, acceptDownloads: true });
+  await zctx.addInitScript(NO_FS_API);
+  const z = await zctx.newPage();
+  watch(z, 'fullscreen');
+  await z.goto(URL_);
+  await openViaInput(z, pngPath);
+  await waitRendered(z, 0);
+  await z.click('#tb-box');
+  const tabsOrder = await z.$$eval('.sigbox .tabs > *', (els) => els.map((e) => e.className));
+  check(JSON.stringify(tabsOrder) === JSON.stringify(['grip', 'fs-btn']), `full-screen button sits next to the Move tab (${tabsOrder.join(', ')})`);
+  check((await z.getAttribute('#box-fullscreen', 'aria-label')) === await tr(z, 'box.fullscreen'), 'full-screen button is labelled');
+  const SW = await z.evaluate(() => window.__websign.STROKE_WIDTH);
+  await z.click('#box-fullscreen');
+  check(await z.evaluate(() => window.__websign.fullscreen) && await z.isVisible('#fs-box'), 'full-screen signing opens');
+  check(await z.evaluate(() => getComputedStyle(document.getElementById('toolbar')).visibility === 'hidden'), 'main toolbar hidden in full screen');
+  const zb = await z.evaluate(() => { const r = document.querySelector('.sigbox').getBoundingClientRect(); return { w: r.width, h: r.height }; });
+  const zf = await rectOf(z, '#fs-box');
+  const zbar = await rectOf(z, '#fs-bar');
+  const zexit = await rectOf(z, '#fs-exit');
+  check(Math.abs(zf.width / zf.height - zb.w / zb.h) < 0.005 * (zb.w / zb.h), `aspect ratio kept (${(zf.width / zf.height).toFixed(3)} vs ${(zb.w / zb.h).toFixed(3)})`);
+  check(zf.width * zf.height > zb.w * zb.h * 8 && (zf.width >= 1280 - 26 || zf.y + zf.height >= zbar.y - 30), `box enlarged to the available space (${zf.width.toFixed(0)}x${zf.height.toFixed(0)})`);
+  check(zexit.y + zexit.height <= zf.y && zf.y + zf.height <= zbar.y && (await z.getAttribute('#fs-exit', 'aria-label')) === await tr(z, 'fs.exit'),
+    'Reduce button above the area, tools below, nothing overlaps');
+  const zbg = await z.evaluate(() => { const c = document.getElementById('fs-bg'); const d = c.getContext('2d').getImageData(c.width >> 1, c.height >> 1, 1, 1).data; return [...d]; });
+  check(zbg[3] === 255 && zbg[0] + zbg[1] + zbg[2] > 30, `the page under the box is shown as a guide (${zbg})`);
+  const fsLine = async (a, b) => { const r = await rectOf(z, '#fs-ink'); await mouseDrag(z, { x: r.x + a[0] * r.width, y: r.y + a[1] * r.height }, { x: r.x + b[0] * r.width, y: r.y + b[1] * r.height }, 24); };
+  await fsLine([0.05, 0.5], [0.95, 0.5]);
+  let zs = await z.evaluate(() => window.__websign.strokes);
+  check(zs.length === 1 && Math.abs(zs[0].width - SW) < 1e-9 && zs[0].points.every((p) => p.x >= 0 && p.x <= 1 && Math.abs(p.y - 0.5) < 0.02), 'stroke drawn in full screen, in box fractions, medium brush');
+  await z.click('#fs-undo');
+  check((await z.evaluate(() => window.__websign.strokes.length)) === 0 && await z.isEnabled('#fs-redo'), 'full-screen Undo');
+  await z.click('#fs-redo');
+  check((await z.evaluate(() => window.__websign.strokes.length)) === 1, 'full-screen Redo');
+  await z.click('#fs-brush');
+  check(await z.isVisible('#brush-pop'), 'filled-circle button opens the brush sizes');
+  const sizes = await z.$$eval('#brush-pop [data-brush]', (bs) => bs.map((b) => [b.textContent.trim(), b.getAttribute('aria-checked')]));
+  check(sizes.length === 4 && sizes[1][1] === 'true' && sizes.every((x) => x[0].length > 1), `four brush sizes, medium selected (${sizes.map((x) => x[0]).join(', ')})`);
+  await z.screenshot({ path: join(SHOTS, `${lang}-fullscreen-brushes.png`) });
+  await z.click('#brush-pop [data-brush="3"]');
+  check((await z.evaluate(() => window.__websign.brush)) === 3 && await z.isHidden('#brush-pop'), 'brush size chosen, menu closed');
+  await fsLine([0.05, 0.2], [0.95, 0.2]);
+  zs = await z.evaluate(() => window.__websign.strokes);
+  check(Math.abs(zs[1].width - SW * 2.4) < 1e-9 && !zs[1].erase, `extra bold stroke is 2.4× wider (${(zs[1].width / SW).toFixed(2)}×)`);
+  await z.click('#fs-undo');
+  await z.click('#fs-eraser');
+  check((await z.getAttribute('#fs-eraser', 'aria-pressed')) === 'true' && await z.evaluate(() => window.__websign.eraser), 'eraser mode on');
+  await fsLine([0.5, 0.02], [0.5, 0.98]);
+  zs = await z.evaluate(() => window.__websign.strokes);
+  check(zs.length === 2 && zs[1].erase === true && Math.abs(zs[1].width - SW * 2.4 * 3) < 1e-9, 'eraser stroke recorded');
+  await z.screenshot({ path: join(SHOTS, `${lang}-fullscreen-erased.png`) });
+  await z.click('#fs-eraser');
+  check((await z.getAttribute('#fs-eraser', 'aria-pressed')) === 'false', 'eraser mode off again');
+  await z.click('#fs-eraser');
+  await z.keyboard.press('Escape');
+  check(!(await z.evaluate(() => window.__websign.fullscreen)) && !(await z.evaluate(() => window.__websign.eraser)) && (await z.evaluate(() => window.__websign.brush)) === 3,
+    'Escape leaves full screen; eraser off, brush size kept');
+  const zbox = await z.evaluate(() => window.__websign.box);
+  const zsig = await downloadFrom(z, () => z.click('#tb-sig'));
+  const sp = await pixelsAt(z, zsig.bytes, 'image/png', [[0.5, 0.5], [0.2, 0.5], [0.8, 0.5]]);
+  check(sp[0][3] === 0 && sp[1][3] > 200 && sp[2][3] > 200, `signature PNG: ink erased where the eraser passed, kept elsewhere (${sp.map((x) => x[3])})`);
+  const zpng = await downloadFrom(z, () => saveCopy(z, 'png', false));
+  const at = (fx, fy) => [zbox.x + fx * zbox.w, zbox.y + fy * zbox.h];
+  const ep = await pixelsAt(z, zpng.bytes, 'image/png', [at(0.5, 0.5), at(0.2, 0.5)]);
+  const op = await pixelsAt(z, readFileSync(pngPath), 'image/png', [at(0.5, 0.5)]);
+  check(ep[0].slice(0, 3).every((v, i) => Math.abs(v - op[0][i]) <= 6) && ep[1][0] + ep[1][1] + ep[1][2] < 150,
+    `page export: the eraser removes ink only, the document under it is intact (${ep[0].slice(0, 3)} vs ${op[0].slice(0, 3)})`);
+  await z.click('#box-fullscreen');
+  await z.click('#fs-erase');
+  await z.waitForSelector('#confirm-dlg[open]');
+  check((await z.textContent('#confirm-title')) === await tr(z, 'fs.eraseTitle') && (await z.textContent('#confirm-ok')) === await tr(z, 'fs.eraseOk'), 'Erase content asks for confirmation');
+  await z.screenshot({ path: join(SHOTS, `${lang}-fullscreen-confirm.png`) });
+  await z.click('#confirm-dlg button[value=cancel]');
+  check((await z.evaluate(() => window.__websign.strokes.length)) === 2 && await z.evaluate(() => window.__websign.fullscreen), 'cancelled: nothing erased, still in full screen');
+  await z.click('#fs-erase');
+  await z.click('#confirm-ok');
+  check((await z.evaluate(() => window.__websign.strokes.length)) === 0 && await z.isDisabled('#fs-erase'), 'confirmed: content erased');
+  await z.click('#fs-undo');
+  check((await z.evaluate(() => window.__websign.strokes.length)) === 2, 'erasing the content can be undone');
+  await z.click('#fs-exit');
+  check(!(await z.evaluate(() => window.__websign.fullscreen)) && (await z.evaluate(() => document.activeElement && document.activeElement.id)) === 'box-fullscreen',
+    'Reduce closes full screen and returns focus to the full-screen button');
+  // the replace-document confirmation keeps its own wording
+  check((await tr(z, 'confirm.title')) !== (await tr(z, 'fs.eraseTitle')), 'confirm dialog texts are per use');
+  await zctx.close();
 
   // =========================================================================
   section(`[${lang}] Save with the browser's own "Save as" window (stubbed showSaveFilePicker)`);
