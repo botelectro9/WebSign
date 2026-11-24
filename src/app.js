@@ -65,7 +65,8 @@
     saveCopy: $('save-copy'), saveOverwrite: $('save-overwrite'), saveCancel: $('save-cancel'), saveReason: $('save-reason'),
     pwdDlg: $('pwd-dlg'), pwdForm: $('pwd-form'), pwdInput: $('pwd-input'), pwdNote: $('pwd-note'), pwdCancel: $('pwd-cancel'),
     confirmDlg: $('confirm-dlg'), confirmNote: $('confirm-note'),
-    readyDlg: $('ready-dlg'), readyNote: $('ready-note'), readyLink: $('ready-link'), readyShare: $('ready-share'),
+    readyDlg: $('ready-dlg'), readyLink: $('ready-link'), readyShare: $('ready-share'),
+    readyName: $('ready-name'), readyExt: $('ready-ext'),
     busy: $('busy'), busyText: $('busy-text'), toast: $('toast'),
   };
 
@@ -1058,11 +1059,13 @@
   }
 
   // Android browsers built on the system WebView (DuckDuckGo, Via, Lightning…) cannot
-  // download blob: URLs at all; most of them do handle data: URLs. Chromium marks the
-  // WebView with "; wv)" in its user agent; DuckDuckGo adds "DuckDuckGo/".
+  // download blob: URLs at all; most of them do handle data: URLs. They often send a plain
+  // Chrome user agent, so they cannot be told apart reliably: every Android browser gets a
+  // data: link (Chrome and Firefox for Android download those too).
   function isAndroidWebView() {
     const ua = navigator.userAgent || '';
-    return /Android/i.test(ua) && (/; wv\)/.test(ua) || /DuckDuckGo\//.test(ua));
+    const uaData = navigator.userAgentData;
+    return /Android/i.test(ua) || !!(uaData && /Android/i.test(uaData.platform || ''));
   }
 
   function blobToDataUrl(blob) {
@@ -1090,16 +1093,33 @@
    * download everywhere, including Safari/iOS where a download started by script after a
    * slow export is ignored) and, where available, the system share sheet.
    */
+  // Characters that are not allowed in file names on Windows, macOS, Android or iOS.
+  function cleanFileName(base, fallback) {
+    const cleaned = String(base).replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim().replace(/^\.+/, '');
+    return cleaned.slice(0, 120) || fallback;
+  }
+
   async function offerDownload(blob, name) {
+    const dot = name.lastIndexOf('.');
+    const ext = dot > 0 ? name.slice(dot) : '';
+    const defaultBase = dot > 0 ? name.slice(0, dot) : name;
     const webView = isAndroidWebView();
     const url = webView ? await blobToDataUrl(blob) : URL.createObjectURL(blob);
-    const file = new File([blob], name, { type: blob.type });
-    const shareable = canShareFile(file);
+    const shareable = canShareFile(new File([blob], name, { type: blob.type }));
     const link = els.readyLink;
+    const fileName = () => cleanFileName(els.readyName.value, defaultBase) + ext;
+    // Chrome ignores a download name with non-ASCII letters (the file would be called
+    // "download"), so accents are dropped there: "signé" → "signe".
+    const asciiName = () => {
+      const n = fileName().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_');
+      return /^[_ .]*$/.test(n.slice(0, -ext.length || undefined)) ? defaultBase + ext : n;
+    };
+    const syncName = () => { link.download = asciiName(); };
     link.href = url;
-    link.download = name;
+    els.readyName.value = defaultBase;
+    els.readyExt.textContent = ext;
+    syncName();
     els.readyShare.hidden = !shareable;
-    els.readyNote.textContent = t(shareable ? 'ready.noteShare' : 'ready.note', { name });
     // The export is finished: hide the "Saving…" indicator while waiting for the user.
     const busyWasShown = !els.busy.hidden;
     els.busy.hidden = true;
@@ -1107,25 +1127,35 @@
       let saved = false;
       let toastMsg = '';
       const onClick = () => {
+        syncName();
         saved = true;
-        toastMsg = t('toast.downloaded', { name });
+        toastMsg = t('toast.downloaded', { name: link.download });
         // Let the browser start the download from this click, then close.
         setTimeout(() => els.readyDlg.close('saved'), 0);
       };
       const onShare = async () => {
+        const n = fileName();
         try {
-          await navigator.share({ files: [file], title: name });
+          await navigator.share({ files: [new File([blob], n, { type: blob.type })], title: n });
           saved = true;
-          toastMsg = t('toast.shared', { name });
+          toastMsg = t('toast.shared', { name: n });
           els.readyDlg.close('shared');
         } catch (e) {
           if (!e || e.name !== 'AbortError') toast(t('err.share', { error: errorMessage(e) }), true);
         }
       };
+      // Enter in the name field saves, like the main button.
+      const onKey = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); syncName(); link.click(); }
+      };
+      els.readyName.addEventListener('input', syncName);
+      els.readyName.addEventListener('keydown', onKey);
       link.addEventListener('click', onClick);
       els.readyShare.addEventListener('click', onShare);
       els.readyDlg.addEventListener('close', function onClose() {
         els.readyDlg.removeEventListener('close', onClose);
+        els.readyName.removeEventListener('input', syncName);
+        els.readyName.removeEventListener('keydown', onKey);
         link.removeEventListener('click', onClick);
         els.readyShare.removeEventListener('click', onShare);
         if (!webView) setTimeout(() => URL.revokeObjectURL(url), 120000);
@@ -1135,7 +1165,8 @@
         resolve(saved);
       });
       els.readyDlg.showModal();
-      link.focus();
+      // Select the name so it can be typed over directly (no keyboard pop-up forced on phones).
+      if (!matchMedia('(pointer: coarse)').matches) { els.readyName.focus(); els.readyName.select(); } else link.focus();
     });
   }
 

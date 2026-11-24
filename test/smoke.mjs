@@ -824,10 +824,10 @@ async function appSuite(lang) {
   await mctx.close();
 
   // =========================================================================
-  section(`[${lang}] Android WebView browser (DuckDuckGo UA) without "Save as": data: link and share sheet`);
+  section(`[${lang}] Android browser with a plain Chrome user agent (as DuckDuckGo may send) without "Save as": data: link and share sheet`);
   const wctx = await browser.newContext({
     viewport: { width: 1000, height: 800 }, acceptDownloads: true,
-    userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0 Mobile Safari/537.36 DuckDuckGo/5',
+    userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
   });
   await wctx.addInitScript(NO_FS_API);
   await wctx.addInitScript(() => {
@@ -848,7 +848,7 @@ async function appSuite(lang) {
   await saveCopy(w, 'png', false);
   await w.waitForSelector('#ready-dlg[open]');
   const wHref = await w.getAttribute('#ready-link', 'href');
-  check(wHref.startsWith('data:image/png;base64,'), 'Android WebView gets a data: link (blob: downloads unsupported there)');
+  check(wHref.startsWith('data:image/png;base64,'), 'Android browser gets a data: link (blob: downloads unsupported in WebView browsers)');
   check(await w.isVisible('#ready-share'), 'share button shown when files can be shared');
   await w.screenshot({ path: join(SHOTS, `${lang}-webview-ready.png`) });
   await w.click('#ready-share');
@@ -856,6 +856,20 @@ async function appSuite(lang) {
   const shared = await w.evaluate(() => window.__shared);
   check(shared.length === 1 && shared[0].name === 'photo-signed.png' && shared[0].type === 'image/png' && shared[0].size > 1000,
     `share sheet receives the signed file (${JSON.stringify(shared)})`);
+  // the Save as window asks for the name; the extension is kept
+  const [renamed] = await Promise.all([
+    w.waitForEvent('download', { timeout: 30000 }),
+    (async () => {
+      await saveCopy(w, 'pdf', false);
+      await w.waitForSelector('#ready-dlg[open] #ready-name');
+      check((await w.inputValue('#ready-name')) === 'photo-signed' && (await w.textContent('#ready-ext')) === '.pdf', 'Save as window proposes the name without extension');
+      const box = await w.$eval('#ready-dlg', (d) => { const r = d.getBoundingClientRect(); return [r.width, r.height]; });
+      check(box[0] <= 360 && box[1] < 260, `Save as window is small (${Math.round(box[0])}x${Math.round(box[1])})`);
+      await w.fill('#ready-name', 'Contrat: signé/final');
+      await w.press('#ready-name', 'Enter');
+    })(),
+  ]);
+  check(renamed.suggestedFilename() === 'Contrat signefinal.pdf', `typed name used, forbidden characters removed, accents simplified (${renamed.suggestedFilename()})`);
   // download through the data: link
   const wdl = await downloadFrom(w, () => saveCopy(w, 'png', false));
   check(wdl.name === 'photo-signed.png' && wdl.bytes[0] === 0x89 && wdl.bytes[1] === 0x50, `data: link downloads the PNG (${wdl.name}, ${wdl.bytes.length} bytes)`);

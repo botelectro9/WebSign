@@ -264,8 +264,11 @@
 .sigbox, .sigbox * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .actions.reverse { flex-direction: row-reverse; justify-content: flex-start; }
 
-/* "File ready" dialog: three buttons may need two rows on narrow phones */
-#ready-dlg .actions { flex-wrap: wrap; }
+/* "Save as" dialog: small, just the name and the buttons */
+.dlg.compact { width: min(360px, calc(100vw - 32px)); padding: 18px; }
+.dlg.compact h2 { font-size: 20px; margin-bottom: 12px; }
+.dlg.compact .actions { flex-wrap: wrap; margin-top: 14px; gap: 6px; }
+.dlg.compact .btn { min-height: 42px; padding: 0 12px; font-size: 15px; }
 
 /* colour-vision menu (eye button) */
 .vision-menu .radio {
@@ -282,3 +285,9 @@ html[data-vision] .swatch span { width: 26px; height: 26px; flex: none; }
 .swatch .sw-name { display: none; }
 html[data-vision] .swatch .sw-name { display: inline; white-space: nowrap; }
 html[data-vision] .swatch[aria-checked="true"] { background: var(--surface-3); }
+
+/* file name field in the "Save as" dialog */
+.name-field { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+.name-row { display: flex; align-items: center; gap: 8px; }
+.name-row .field { flex: 1; min-width: 0; font-size: 16px; } /* 16px: no zoom on iOS */
+.name-row .ext { color: var(--muted); font-weight: 600; }
