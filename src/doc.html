@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="{{CSP}}">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>{{TITLE}}</title>
+<link rel="icon" href="{{FAVICON}}">
+<style>
+/* @CSS */
+</style>
+</head>
+<body>
+<!-- @ICONS -->
+<header class="bar">
+  <a class="brand-link" href="../index.html" id="doc-home" aria-label="{{HOME_LABEL}}"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><span>WebSign</span></a>
+  <span class="spacer"></span>
+  <a class="bar-link" id="doc-other" href="{{OTHER_HREF}}" hreflang="{{OTHER_LANG}}" lang="{{OTHER_LANG}}">{{OTHER_LABEL}}</a>
+  <a class="btn primary small" id="doc-open" href="../app/websign_{{LANG}}.html">{{OPEN_LABEL}}</a>
+</header>
+<div class="docs-body">
+  <nav class="toc" aria-labelledby="toc-title">
+    <h2 id="toc-title">{{TOC_LABEL}}</h2>
+    <ol>
+{{TOC}}
+    </ol>
+  </nav>
+  <main class="doc">
+{{CONTENT}}
+    <footer class="doc-foot">
+      <a href="../app/websign_{{LANG}}.html">{{OPEN_LABEL}}</a>
+      <a href="{{OTHER_HREF}}" hreflang="{{OTHER_LANG}}" lang="{{OTHER_LANG}}">{{OTHER_LABEL}}</a>
+      <a href="../index.html">{{HOME_TEXT}}</a>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="{{CSP}}">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="{{DESCRIPTION}}">
+<title>{{TITLE}}</title>
+<link rel="icon" href="{{FAVICON}}">
+<style>
+/* @CSS */
+</style>
+</head>
+<body>
+<!-- @ICONS -->
+
+<!-- ===================================================================== app -->
+<div id="view-app" class="app">
+  <header class="bar topbar" id="topbar">
+    <a class="brand-link" href="../index.html" id="app-home" data-i18n-aria="nav.home"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><span>WebSign</span></a>
+    <span class="filename" id="filename"></span>
+    <span class="spacer"></span>
+    <a class="bar-link" id="app-help" href="../doc/doc_{{LANG}}.html" data-i18n="nav.help"></a>
+  </header>
+
+  <main id="viewer" class="viewer" data-i18n-aria="doc.aria">
+    <section id="start" class="start">
+      <div class="dropzone" id="dropzone">
+        <svg class="hero ico" aria-hidden="true"><use href="#i-file"/></svg>
+        <h1 data-i18n="start.title"></h1>
+        <p class="lead" data-i18n="start.lead"></p>
+        <button type="button" class="btn primary" id="open-btn" data-i18n="start.open"></button>
+        <p class="hint" data-i18n="start.drop"></p>
+        <input type="file" id="file-input" accept="application/pdf,.pdf,image/*" hidden>
+      </div>
+      <p class="privacy" data-i18n="start.privacy"></p>
+    </section>
+    <div id="pages" class="pages"></div>
+  </main>
+
+  <div id="drop-overlay" class="drop-overlay" hidden><div data-i18n="drop.overlay"></div></div>
+
+  <nav id="toolbar" class="toolbar" role="toolbar" data-i18n-aria="tb.label" hidden>
+    <button type="button" class="tb" id="tb-box" aria-haspopup="menu" aria-expanded="false"><svg class="ico" aria-hidden="true"><use href="#i-box"/></svg></button>
+    <button type="button" class="tb" id="tb-pen" data-i18n-tip="tb.penTip" aria-haspopup="true" aria-expanded="false"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg><span class="pen-dot" id="pen-dot"></span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="tb" id="tb-undo" data-i18n-aria="tb.undo" data-i18n-tip="tb.undoTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></button>
+    <button type="button" class="tb" id="tb-redo" data-i18n-aria="tb.redo" data-i18n-tip="tb.redoTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="tb" id="tb-sig" data-i18n-aria="tb.sig" data-i18n-tip="tb.sigTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></button>
+    <button type="button" class="tb" id="tb-save" data-i18n-aria="tb.save" data-i18n-tip="tb.saveTip" disabled><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></button>
+  </nav>
+
+  <div id="box-menu" class="popover menu" role="menu" data-i18n-aria="menu.label" hidden>
+    <button type="button" role="menuitem" id="bm-erase"><svg class="ico" aria-hidden="true"><use href="#i-eraser"/></svg><span data-i18n="menu.erase"></span></button>
+    <button type="button" role="menuitem" id="bm-delete" class="danger"><svg class="ico" aria-hidden="true"><use href="#i-trash"/></svg><span data-i18n="menu.delete"></span></button>
+    <button type="button" role="menuitem" id="bm-cancel"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg><span data-i18n="menu.cancel"></span></button>
+  </div>
+
+  <div id="pen-pop" class="popover swatches" role="radiogroup" data-i18n-aria="pen.label" hidden></div>
+</div>
+
+<dialog id="save-dlg" class="dlg" aria-labelledby="save-title">
+  <form method="dialog" id="save-form">
+    <h2 id="save-title" data-i18n="save.title"></h2>
+    <fieldset class="formats">
+      <legend data-i18n="save.format"></legend>
+      <label><input type="radio" name="fmt" value="pdf" checked><span>PDF</span></label>
+      <label><input type="radio" name="fmt" value="png"><span>PNG</span></label>
+      <label><input type="radio" name="fmt" value="jpg"><span>JPG</span></label>
+    </fieldset>
+    <p class="note" id="save-note"></p>
+    <label class="check"><input type="checkbox" name="outline" id="save-outline"><span data-i18n="save.outline"></span></label>
+    <div class="actions save-actions">
+      <button type="button" class="btn" id="save-cancel" data-i18n="save.cancel"></button>
+      <button type="button" class="btn" id="save-copy" data-i18n="save.copy"></button>
+      <button type="button" class="btn primary" id="save-overwrite" aria-describedby="save-reason" data-i18n="save.overwrite"></button>
+    </div>
+    <p class="reason" id="save-reason"></p>
+  </form>
+</dialog>
+
+<dialog id="pwd-dlg" class="dlg" aria-labelledby="pwd-title">
+  <form method="dialog" id="pwd-form">
+    <h2 id="pwd-title" data-i18n="pwd.title"></h2>
+    <p class="note" id="pwd-note"></p>
+    <input type="password" id="pwd-input" class="field" autocomplete="off" data-i18n-aria="pwd.input">
+    <div class="actions">
+      <button type="submit" class="btn" id="pwd-cancel" value="cancel" data-i18n="pwd.cancel"></button>
+      <button type="submit" class="btn primary" value="ok" data-i18n="pwd.open"></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-dlg" class="dlg" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title" data-i18n="confirm.title"></h2>
+    <p class="note" id="confirm-note"></p>
+    <div class="actions">
+      <button type="submit" class="btn" value="cancel" data-i18n="confirm.cancel"></button>
+      <button type="submit" class="btn primary" value="ok" id="confirm-ok" data-i18n="confirm.ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="busy" class="busy" hidden><div class="spinner" aria-hidden="true"></div><span id="busy-text"></span></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- @LIBS -->
+<script>
+/* @JS */
+</script>
+</body>
+</html>

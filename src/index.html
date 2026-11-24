@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="{{CSP}}">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="WebSign: sign a PDF or an image in your browser. Nothing is uploaded. — Signez un PDF ou une image dans votre navigateur, sans rien envoyer.">
+<title>WebSign – Sign a PDF or an image · Signer un PDF ou une image</title>
+<link rel="icon" href="{{FAVICON}}">
+<style>
+/* @CSS */
+</style>
+</head>
+<body>
+<!-- @ICONS -->
+<main class="landing-main">
+  <div class="landing-brand">
+    <svg class="logo-lg" aria-hidden="true"><use href="#i-logo"/></svg>
+    <h1>WebSign</h1>
+  </div>
+  <p class="pitch">
+    <span lang="en">Sign a PDF or an image right in your browser: add a signature box, sign with your mouse or finger, save.</span>
+    <span lang="fr">Signez un PDF ou une image directement dans votre navigateur&#8239;: ajoutez un cadre, signez à la souris ou au doigt, enregistrez.</span>
+  </p>
+  <div class="privacy-card">
+    <svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg>
+    <div>
+      <p lang="en"><strong>Private by design.</strong> WebSign runs entirely in your browser. Your files are never uploaded, and the page loads nothing from the web.</p>
+      <p lang="fr"><strong>Confidentiel par conception.</strong> WebSign fonctionne entièrement dans votre navigateur. Vos fichiers ne sont jamais envoyés et la page ne charge rien depuis Internet.</p>
+    </div>
+  </div>
+  <div class="choices" id="choices">
+    <section class="choice" lang="en" id="choice-en" aria-labelledby="choice-en-title">
+      <h2 id="choice-en-title">English</h2>
+      <a class="btn primary big" href="app/websign_en.html" id="go-en-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Open WebSign (English)</span></a>
+      <a class="btn big" href="doc/doc_en.html" id="go-en-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Documentation (English)</span></a>
+    </section>
+    <section class="choice" lang="fr" id="choice-fr" aria-labelledby="choice-fr-title">
+      <h2 id="choice-fr-title">Français</h2>
+      <a class="btn primary big" href="app/websign_fr.html" id="go-fr-app"><svg class="ico" aria-hidden="true"><use href="#i-file"/></svg><span>Ouvrir WebSign (Français)</span></a>
+      <a class="btn big" href="doc/doc_fr.html" id="go-fr-doc"><svg class="ico" aria-hidden="true"><use href="#i-book"/></svg><span>Documentation (Français)</span></a>
+    </section>
+  </div>
+  <p class="landing-foot">
+    <span lang="en">Works offline and from a local copy. Built with pdf.js (Apache-2.0) and pdf-lib (MIT).</span>
+    <span lang="fr">Fonctionne hors ligne et depuis une copie locale. Réalisé avec pdf.js (Apache-2.0) et pdf-lib (MIT).</span>
+  </p>
+</main>
+<script>
+// Show the browser's language first; both choices always stay available.
+(function () {
+  var langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en']);
+  var first = String(langs[0] || 'en').toLowerCase();
+  if (first.indexOf('fr') === 0) {
+    var box = document.getElementById('choices');
+    box.insertBefore(document.getElementById('choice-fr'), document.getElementById('choice-en'));
+  }
+})();
+</script>
+</body>
+</html>
