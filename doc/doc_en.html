@@ -95,6 +95,13 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; line-height: 1.2; }
 .btn.small { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
+a.btn { color: var(--text); }
+a.btn.primary { color: var(--accent-text); }
+.bar .btn, .bar-link { white-space: nowrap; }
+@media (max-width: 420px) {
+  .bar { gap: 6px; }
+  .brand-link span { display: none; }
+}
 /* ---------- landing ---------- */
 .landing-main {
   min-height: 100vh; min-height: 100dvh;
@@ -134,11 +141,11 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 
 /* ---------- docs ---------- */
 .docs-body { max-width: 1120px; margin: 0 auto; padding: 24px 20px calc(64px + var(--safe-b)); display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; }
-@media (max-width: 860px) { .docs-body { grid-template-columns: 1fr; gap: 8px; } }
+@media (max-width: 860px) { .docs-body { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
 .toc { position: sticky; top: 72px; align-self: start; max-height: calc(100vh - 90px); overflow: auto; font-size: 14px; }
 @media (max-width: 860px) { .toc { position: static; max-height: none; } }
 .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
-.toc ol { margin: 0; padding-left: 20px; }
+.toc ol { margin: 0; padding-left: 28px; }
 .toc li { margin: 4px 0; }
 .toc a { color: var(--text); text-decoration: none; }
 .toc a:hover { color: var(--accent); text-decoration: underline; }
@@ -161,6 +168,9 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
 .doc dt { font-weight: 650; margin-top: 14px; }
 .doc dd { margin: 4px 0 0 0; }
 .doc-foot { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.doc pre { overflow: auto; background: var(--surface-2); border: 1px solid var(--line); padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; }
+.doc pre code { border: 0; padding: 0; background: none; }
+.doc ul ul { margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -192,13 +202,207 @@ a:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, trans
   <nav class="toc" aria-labelledby="toc-title">
     <h2 id="toc-title">Contents</h2>
     <ol>
-      <li><a href="#intro">Intro</a></li>
+      <li><a href="#what">What WebSign is</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#files">Supported files</a></li>
+      <li><a href="#open">Opening a file</a></li>
+      <li><a href="#box">The signature box</a></li>
+      <li><a href="#sign">Signing with the mouse or a finger</a></li>
+      <li><a href="#colours">Ink colours</a></li>
+      <li><a href="#undo">Undo and redo</a></li>
+      <li><a href="#save-signature">Saving the signature as PNG</a></li>
+      <li><a href="#save-document">Saving the document</a></li>
+      <li><a href="#offline">Using WebSign offline or from your computer</a></li>
+      <li><a href="#hosting">Hosting on GitHub Pages</a></li>
+      <li><a href="#limits">Known limitations</a></li>
+      <li><a href="#licences">Licences</a></li>
+      <li><a href="#faq">FAQ</a></li>
     </ol>
   </nav>
   <main class="doc">
-<h1>WebSign</h1>
-<h2 id="intro">Intro</h2>
-<p>TODO</p>
+<h1>WebSign user guide</h1>
+<p class="lede">WebSign lets you put a handwritten signature on a PDF or an image, directly in your web browser, and save the result.</p>
+
+<h2 id="what">What WebSign is</h2>
+<p>WebSign is a single web page. You open a PDF or an image, place one signature box on it, sign inside the box with your mouse, a pen or your finger, then save:</p>
+<ul>
+  <li>the signature alone, as a transparent PNG image;</li>
+  <li>the signed document, as a PDF, PNG or JPG file.</li>
+</ul>
+<p>Everything is done by a floating toolbar at the bottom of the screen. It has exactly six buttons:</p>
+<table>
+  <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-box"/></svg></span> Box</td><td>Adds the signature box. When a box already exists, opens a menu: <em>Erase content</em>, <em>Delete box</em>, <em>Cancel</em>.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg></span> Pen</td><td>Chooses the ink colour. The small bar under the pen shows the current colour.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></span> Undo</td><td>Undoes the last action.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> Redo</td><td>Redoes what was undone.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> Save signature</td><td>Saves the content of the box as a transparent PNG image.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> Save page</td><td>Saves the signed document as PDF, PNG or JPG.</td></tr>
+  </tbody>
+</table>
+<p>Buttons that cannot be used yet are greyed out (for example, <em>Save signature</em> stays disabled until there is ink in the box).</p>
+
+<h2 id="privacy">Privacy</h2>
+<p class="callout">Your file never leaves your device. WebSign runs entirely in your browser: nothing is uploaded, there is no server, no account, no analytics, and the page loads nothing from the web.</p>
+<p>The two libraries WebSign uses (pdf.js to display PDFs, pdf-lib to write them) are embedded inside the page itself. The page also carries a strict security policy (<code>Content-Security-Policy</code>) that forbids the browser from making network connections on its behalf. Once the page is loaded, you can even disconnect from the Internet and keep working.</p>
+<p>Nothing is stored either: when you close or reload the page, the open document and the signature are gone, unless you saved them.</p>
+
+<h2 id="files">Supported files</h2>
+<ul>
+  <li><strong>PDF</strong> documents, including multi-page documents, rotated pages and password-protected PDFs (see below).</li>
+  <li><strong>Images</strong>: PNG and JPEG, and any other format your browser can display (for example WebP, GIF, BMP, AVIF or SVG). Photos taken with a phone are shown upright, following their orientation information.</li>
+</ul>
+<p>Other file types are refused with an error message.</p>
+
+<h2 id="open">Opening a file</h2>
+<h3>With the button</h3>
+<p>On the start screen, click <strong>Open PDF or image</strong> and choose a file. In Chrome, Edge and other Chromium-based browsers on a computer, this opens the system file picker in a way that also allows WebSign to overwrite the original file later, if you ask it to (see <a href="#overwrite">Overwrite or copy</a>).</p>
+<h3>By drag and drop</h3>
+<p>Drop a file anywhere on the page. This works on the start screen and also when a document is already open: the dropped file then replaces the current document. If you have signing work that has not been saved, WebSign asks for confirmation first.</p>
+<p>Once a document is open, the start screen is no longer shown. To open another file without drag and drop (on a phone, for instance), reload the page or go back to the WebSign home page and open the app again.</p>
+<h3>Password-protected PDFs</h3>
+<p>If a PDF is protected by a password, WebSign asks for it. If the password is wrong, you can try again; <em>Cancel</em> abandons opening the file. The password is only used in your browser to decrypt the document.</p>
+<p>Note: a protected PDF cannot be modified directly. When you save it as PDF, WebSign creates a new PDF made of images of its pages (see <a href="#limits">Known limitations</a>).</p>
+
+<h2 id="box">The signature box</h2>
+<h3>Adding the box</h3>
+<p>Tap the <strong>Box</strong> button <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-box"/></svg></span>. The box appears in the middle of the page that is most visible on screen. There is only one box at a time.</p>
+<p>The box has a dashed outline while you work. This outline is <strong>not</strong> saved in the document unless you tick <em>Keep the box outline visible</em> when saving.</p>
+<h3>Moving the box</h3>
+<p>Drag the <strong>Move</strong> tab above the box, or drag its border. Dragging inside the box draws instead. The box always stays within the page. You can also drag it onto another page of the document: it moves to that page when you release it.</p>
+<h3>Resizing the box</h3>
+<p>Drag one of the eight handles (the four corners and the middle of each side). The box cannot become smaller than about 36 pixels on screen, nor larger than the page.</p>
+<p>The signature is stored as lines, not as pixels: when you resize the box, the signature follows and stays sharp. If you change the proportions of the box, the signature is stretched accordingly.</p>
+<h3>The box menu</h3>
+<p>When the box exists, the Box button opens a small menu:</p>
+<dl>
+  <dt>Erase content</dt><dd>Removes the ink but keeps the box where it is.</dd>
+  <dt>Delete box</dt><dd>Removes the box and its content.</dd>
+  <dt>Cancel</dt><dd>Closes the menu without changing anything. <kbd>Esc</kbd> does the same.</dd>
+</dl>
+<p>Both <em>Erase content</em> and <em>Delete box</em> can be undone.</p>
+
+<h2 id="sign">Signing with the mouse or a finger</h2>
+<p>Draw inside the box:</p>
+<ul>
+  <li><strong>On a computer</strong>: hold the left mouse button down and draw. A pen tablet works the same way.</li>
+  <li><strong>On a phone or tablet</strong>: draw with one finger (or a stylus). Inside the box, the page does not scroll, so you can sign comfortably. Outside the box, you scroll and zoom the page as usual.</li>
+</ul>
+<p>Only one finger draws at a time: a second finger or the palm is ignored while you draw. A single tap or click makes a dot. Ink that goes past the edge of the box is cut off at the border.</p>
+<p>The thickness of the line is proportional to the height of the box, so the signature keeps the same look whatever the zoom level.</p>
+
+<h2 id="colours">Ink colours</h2>
+<p>Tap the <strong>Pen</strong> button <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg></span> and choose one of nine colours: black (the default), white, grey, dark blue, red, green, pink, yellow and orange.</p>
+<p>The colour applies to the lines you draw next; lines already drawn keep their colour, so you can mix colours in one signature.</p>
+
+<h2 id="undo">Undo and redo</h2>
+<p>The <strong>Undo</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></span> and <strong>Redo</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> buttons cover every change: adding, moving, resizing and deleting the box, each line drawn, and erasing the content. A new action after an undo clears what could be redone.</p>
+<p>Keyboard shortcuts:</p>
+<table>
+  <tbody>
+    <tr><td>Undo</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> (<kbd>⌘</kbd>+<kbd>Z</kbd> on a Mac)</td></tr>
+    <tr><td>Redo</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> on a Mac)</td></tr>
+  </tbody>
+</table>
+<p>The history is cleared when you open another file.</p>
+
+<h2 id="save-signature">Saving the signature as PNG</h2>
+<p>The <strong>Save signature</strong> button <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> saves only the content of the box, as a PNG image with a transparent background, named <code>signature.png</code>. It is at least 1200 pixels wide (three times the size of the box on the document), so you can reuse it elsewhere.</p>
+
+<h2 id="save-document">Saving the document</h2>
+<p>The <strong>Save page</strong> button <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> opens a small window with:</p>
+<ol>
+  <li>the <strong>format</strong>: PDF, PNG or JPG (preselected: the format of the original file, or PDF);</li>
+  <li>the option <strong>Keep the box outline visible</strong>, unticked by default: when ticked, a thin grey rectangle is drawn around the signature;</li>
+  <li>three buttons: <strong>Overwrite original</strong>, <strong>Create a copy</strong> and <strong>Cancel</strong>.</li>
+</ol>
+<h3>What each format contains</h3>
+<dl>
+  <dt>PDF, from a PDF</dt>
+  <dd>The original document with all its pages, unchanged, plus the signature added as an image on its page. Text stays text (selectable and searchable).</dd>
+  <dt>PDF, from an image</dt>
+  <dd>A one-page PDF containing the original image at full resolution (one image pixel = 1/96 inch) and the signature.</dd>
+  <dt>PNG or JPG, from a PDF</dt>
+  <dd>An image of <strong>one page</strong>: the page that holds the box (or, without a box, the page most visible on screen). The window tells you which page will be saved. The page is rendered at three times its normal size (about 216 dpi), within the limits of what browsers can handle.</dd>
+  <dt>PNG or JPG, from an image</dt>
+  <dd>The image at its original size with the signature on it.</dd>
+</dl>
+<p>JPG has no transparency: transparent areas become white. JPG images are saved at quality 92%.</p>
+
+<h3 id="overwrite">Overwrite original, Create a copy or Cancel</h3>
+<dl>
+  <dt>Create a copy</dt>
+  <dd>Saves a new file named after the original with <code>-signed</code> added (for example <code>contract-signed.pdf</code>). Where the browser supports it (Chrome, Edge), a “Save as” window lets you choose the folder and the name; otherwise the file goes to your usual downloads folder. The original file is not touched.</dd>
+  <dt>Overwrite original</dt>
+  <dd>Replaces the file you opened with the signed version. The browser asks for your permission the first time. This button is only active when all of these are true:
+    <ul>
+      <li>your browser supports writing to local files (the <em>File System Access</em> feature: Chrome, Edge and other Chromium-based browsers on a computer; not Firefox, not Safari, not most phones);</li>
+      <li>the file was opened with the <em>Open</em> button or dropped onto the page in such a browser (WebSign then knows where it is);</li>
+      <li>the chosen format is the format of the original (PDF to PDF, PNG to PNG, JPG to JPG). For a PDF with several pages, only PDF can overwrite it, since PNG and JPG contain one page.</li>
+    </ul>
+    When it is not available, the button is greyed out and a short line under it explains why. WebSign never replaces an overwrite by a download without telling you.</dd>
+  <dt>Cancel</dt>
+  <dd>Closes the window without saving.</dd>
+</dl>
+<p>Saving several times in a row is safe: WebSign always starts again from the original, unsigned content it read when you opened the file, so the signature is never stamped twice. Keep in mind that after an overwrite, the file on your disk contains the signature permanently; if you open it again later, the signature is part of the document.</p>
+<p>If you try to leave or reload the page while you have signing work that has not been saved, the browser asks you to confirm.</p>
+
+<h2 id="offline">Using WebSign offline or from your computer</h2>
+<p>WebSign is made of five independent files. Each page contains everything it needs, so you can copy them to your computer and open them directly from the disk (by double-clicking <code>index.html</code>), without any web server and without an Internet connection:</p>
+<pre><code>index.html            home page (language choice)
+app/websign_en.html   WebSign in English
+app/websign_fr.html   WebSign in French
+doc/doc_en.html       this guide in English
+doc/doc_fr.html       this guide in French</code></pre>
+<p>The app pages work on their own too: <code>app/websign_en.html</code> alone is enough to sign documents. Keep the folders as they are if you want the links between pages to work.</p>
+
+<h2 id="hosting">Hosting on GitHub Pages</h2>
+<ol>
+  <li>Create a GitHub repository (it can be public, or private with a plan that allows Pages).</li>
+  <li>Upload <code>index.html</code> and the <code>app/</code> and <code>doc/</code> folders to the root of the repository. You can also add an empty file named <code>.nojekyll</code>.</li>
+  <li>In the repository, open <em>Settings → Pages</em>, choose <em>Deploy from a branch</em>, select the branch (for example <code>main</code>) and the <code>/ (root)</code> folder, and save.</li>
+  <li>After a minute, the site is available at <code>https://&lt;your-name&gt;.github.io/&lt;repository&gt;/</code>.</li>
+</ol>
+<p>GitHub only serves the files: signing still happens entirely in the visitor's browser, and nothing is sent back to GitHub. Any other static web host works the same way.</p>
+
+<h2 id="limits">Known limitations</h2>
+<ul>
+  <li><strong>This is not a certified digital signature.</strong> WebSign adds an image of your handwritten signature. It does not add a cryptographic signature or a certificate, and it does not prove who signed.</li>
+  <li><strong>One box at a time.</strong> To sign in several places, save, open the saved file, and add the next signature.</li>
+  <li><strong>Protected or unusual PDFs.</strong> When a PDF cannot be modified directly (typically a password-protected one), the PDF export is made of images of the pages, at about 144 dpi: the result looks the same but its text can no longer be selected or searched, and the file can be larger. WebSign shows a message when this happens.</li>
+  <li><strong>Display of some PDFs.</strong> To keep the page self-contained, some optional pdf.js resources are not included: PDFs that rely on non-embedded Asian fonts, or that contain JPEG 2000 or JBIG2 images, may be displayed imperfectly in WebSign. This only affects what you see on screen and the PNG/JPG exports; a PDF export keeps the original pages untouched.</li>
+  <li><strong>Forms and annotations</strong> are shown as they appear in the PDF but cannot be filled in.</li>
+  <li><strong>PNG and JPG exports contain one page.</strong> Use PDF to keep all the pages.</li>
+  <li><strong>Very large pages or images</strong> are scaled down if needed to stay within the limits of browser canvases (about 16 megapixels).</li>
+  <li><strong>Browsers.</strong> WebSign was tested with Chrome on a computer and with phone emulation. It is designed for current versions of Chrome, Edge, Firefox and Safari, on computers and phones, but those other browsers have not all been tested. Overwriting the original file needs Chrome or Edge on a computer.</li>
+</ul>
+
+<h2 id="licences">Licences</h2>
+<p>WebSign includes two open-source libraries, embedded in the app pages:</p>
+<ul>
+  <li><strong>pdf.js</strong> 6.2.108 by Mozilla, under the Apache License 2.0 — displays PDF documents.</li>
+  <li><strong>pdf-lib</strong> 1.17.1 by Andrew Dillon, under the MIT licence — writes the signed PDF.</li>
+</ul>
+<p>WebSign’s own code is released into the public domain under <strong>the Unlicense</strong> (see the <code>LICENSE</code> file of the source repository). The embedded pdf.js and pdf-lib keep their own licences; their full texts are included in the <code>vendor/</code> folder of the repository.</p>
+
+<h2 id="faq">FAQ</h2>
+<dl>
+  <dt>Is my document sent anywhere?</dt>
+  <dd>No. Everything happens in your browser. You can check it by disconnecting from the Internet after opening the page: WebSign keeps working.</dd>
+  <dt>Why is “Overwrite original” greyed out?</dt>
+  <dd>The line under the buttons gives the reason: your browser cannot write to local files, the file location is unknown, or the chosen format differs from the original. Use <em>Create a copy</em> instead.</dd>
+  <dt>Where is my copy saved?</dt>
+  <dd>In Chrome and Edge, where you choose in the “Save as” window. In other browsers, in your downloads folder (on iPhone, in the Files app, under Downloads).</dd>
+  <dt>My signature looks stretched.</dt>
+  <dd>The signature follows the shape of the box. Resize the box back to its previous proportions, or erase and sign again.</dd>
+  <dt>Can I sign with white ink?</dt>
+  <dd>Yes, white is one of the nine colours. It is useful on dark documents; on a white page it is invisible.</dd>
+  <dt>Can I use my saved signature again?</dt>
+  <dd>WebSign does not keep anything between visits. You can keep the <code>signature.png</code> file and insert it with another program.</dd>
+  <dt>How do I open another file on my phone?</dt>
+  <dd>Reload the page, or go back to the home page with the WebSign logo at the top left, then open the app again.</dd>
+</dl>
     <footer class="doc-foot">
       <a href="../app/websign_en.html">Open WebSign</a>
       <a href="doc_fr.html" hreflang="fr" lang="fr">Version française</a>

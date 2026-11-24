@@ -1,3 +1,183 @@
-<h1>WebSign</h1>
-<h2 id="intro">Intro</h2>
-<p>TODO</p>
+<h1>Guide d’utilisation de WebSign</h1>
+<p class="lede">WebSign vous permet d’apposer une signature manuscrite sur un PDF ou une image, directement dans votre navigateur, puis d’enregistrer le résultat.</p>
+
+<h2 id="presentation">Qu’est-ce que WebSign&#8239;?</h2>
+<p>WebSign tient en une seule page web. Vous ouvrez un PDF ou une image, vous placez un cadre de signature, vous signez à l’intérieur à la souris, au stylet ou au doigt, puis vous enregistrez&#8239;:</p>
+<ul>
+  <li>la signature seule, sous forme d’image PNG à fond transparent&#8239;;</li>
+  <li>le document signé, au format PDF, PNG ou JPG.</li>
+</ul>
+<p>Tout se fait depuis la barre d’outils flottante, en bas de l’écran. Elle compte exactement six boutons&#8239;:</p>
+<table>
+  <thead><tr><th>Bouton</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-box"/></svg></span> Cadre</td><td>Ajoute le cadre de signature. Si un cadre existe déjà, ouvre un menu&#8239;: <em>Effacer le contenu</em>, <em>Supprimer le cadre</em>, <em>Annuler</em>.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg></span> Stylo</td><td>Choisit la couleur de l’encre. Le petit trait sous le stylo indique la couleur en cours.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></span> Annuler</td><td>Annule la dernière action.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> Rétablir</td><td>Rétablit ce qui a été annulé.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> Enregistrer la signature</td><td>Enregistre le contenu du cadre en image PNG transparente.</td></tr>
+    <tr><td><span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> Enregistrer la page</td><td>Enregistre le document signé en PDF, PNG ou JPG.</td></tr>
+  </tbody>
+</table>
+<p>Les boutons inutilisables pour l’instant sont grisés (par exemple, <em>Enregistrer la signature</em> reste inactif tant que le cadre est vide).</p>
+
+<h2 id="confidentialite">Confidentialité</h2>
+<p class="callout">Votre fichier ne quitte jamais votre appareil. WebSign fonctionne entièrement dans votre navigateur&#8239;: rien n’est envoyé, il n’y a ni serveur, ni compte, ni mesure d’audience, et la page ne charge rien depuis Internet.</p>
+<p>Les deux bibliothèques utilisées (pdf.js pour afficher les PDF, pdf-lib pour les écrire) sont intégrées à la page elle-même. La page impose en outre une politique de sécurité stricte (<code>Content-Security-Policy</code>) qui interdit au navigateur toute connexion réseau en son nom. Une fois la page chargée, vous pouvez même couper Internet et continuer à travailler.</p>
+<p>Rien n’est conservé non plus&#8239;: quand vous fermez ou rechargez la page, le document ouvert et la signature disparaissent, sauf si vous les avez enregistrés.</p>
+
+<h2 id="fichiers">Fichiers pris en charge</h2>
+<ul>
+  <li><strong>PDF</strong>, y compris les documents de plusieurs pages, les pages pivotées et les PDF protégés par mot de passe (voir plus bas).</li>
+  <li><strong>Images</strong>&#8239;: PNG et JPEG, ainsi que tout autre format que votre navigateur sait afficher (WebP, GIF, BMP, AVIF ou SVG, par exemple). Les photos prises avec un téléphone s’affichent à l’endroit, selon leur information d’orientation.</li>
+</ul>
+<p>Les autres types de fichiers sont refusés avec un message d’erreur.</p>
+
+<h2 id="ouvrir">Ouvrir un fichier</h2>
+<h3>Avec le bouton</h3>
+<p>Sur l’écran d’accueil de l’application, cliquez sur <strong>Ouvrir un PDF ou une image</strong> et choisissez un fichier. Dans Chrome, Edge et les autres navigateurs basés sur Chromium sur ordinateur, c’est le sélecteur de fichiers du système qui s’ouvre, ce qui permet ensuite à WebSign d’écraser le fichier d’origine si vous le demandez (voir <a href="#ecraser">Écraser ou copier</a>).</p>
+<h3>Par glisser-déposer</h3>
+<p>Déposez un fichier n’importe où sur la page. Cela fonctionne sur l’écran d’accueil, mais aussi quand un document est déjà ouvert&#8239;: le fichier déposé remplace alors le document en cours. Si une signature n’a pas encore été enregistrée, WebSign vous demande d’abord confirmation.</p>
+<p>Une fois un document ouvert, l’écran d’accueil n’est plus affiché. Pour ouvrir un autre fichier sans glisser-déposer (sur un téléphone, par exemple), rechargez la page ou revenez à la page d’accueil de WebSign, puis rouvrez l’application.</p>
+<h3>PDF protégés par mot de passe</h3>
+<p>Si un PDF est protégé, WebSign vous demande son mot de passe. En cas d’erreur, vous pouvez réessayer&#8239;; <em>Annuler</em> abandonne l’ouverture. Le mot de passe sert uniquement, dans votre navigateur, à déchiffrer le document.</p>
+<p>Attention&#8239;: un PDF protégé ne peut pas être modifié directement. À l’enregistrement en PDF, WebSign crée un nouveau PDF composé d’images de ses pages (voir <a href="#limites">Limites connues</a>).</p>
+
+<h2 id="cadre">Le cadre de signature</h2>
+<h3>Ajouter le cadre</h3>
+<p>Touchez le bouton <strong>Cadre</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-box"/></svg></span>. Le cadre apparaît au milieu de la page la plus visible à l’écran. Il n’y a qu’un seul cadre à la fois.</p>
+<p>Pendant que vous travaillez, le cadre est entouré d’un pointillé. Ce contour n’est <strong>pas</strong> enregistré dans le document, sauf si vous cochez <em>Garder le contour du cadre visible</em> au moment d’enregistrer.</p>
+<h3>Déplacer le cadre</h3>
+<p>Faites glisser l’onglet <strong>Déplacer</strong> situé au-dessus du cadre, ou sa bordure. Glisser à l’intérieur du cadre, en revanche, sert à dessiner. Le cadre reste toujours dans la page. Vous pouvez aussi l’amener sur une autre page du document&#8239;: il y est transféré quand vous le relâchez.</p>
+<h3>Redimensionner le cadre</h3>
+<p>Faites glisser l’une des huit poignées (les quatre coins et le milieu de chaque côté). Le cadre ne peut pas devenir plus petit qu’environ 36 pixels à l’écran, ni dépasser de la page.</p>
+<p>La signature est conservée sous forme de tracés et non de pixels&#8239;: quand vous redimensionnez le cadre, elle suit et reste nette. Si vous changez les proportions du cadre, la signature est étirée d’autant.</p>
+<h3>Le menu du cadre</h3>
+<p>Quand le cadre existe, le bouton Cadre ouvre un petit menu&#8239;:</p>
+<dl>
+  <dt>Effacer le contenu</dt><dd>Efface l’encre mais laisse le cadre en place.</dd>
+  <dt>Supprimer le cadre</dt><dd>Supprime le cadre et son contenu.</dd>
+  <dt>Annuler</dt><dd>Ferme le menu sans rien changer. La touche <kbd>Échap</kbd> fait de même.</dd>
+</dl>
+<p><em>Effacer le contenu</em> et <em>Supprimer le cadre</em> peuvent tous deux être annulés.</p>
+
+<h2 id="signer">Signer à la souris ou au doigt</h2>
+<p>Dessinez à l’intérieur du cadre&#8239;:</p>
+<ul>
+  <li><strong>Sur ordinateur</strong>&#8239;: maintenez le bouton gauche de la souris enfoncé et dessinez. Une tablette graphique fonctionne de la même façon.</li>
+  <li><strong>Sur téléphone ou tablette</strong>&#8239;: dessinez avec un doigt (ou un stylet). Dans le cadre, la page ne défile pas, ce qui permet de signer confortablement. En dehors du cadre, vous faites défiler et zoomez la page comme d’habitude.</li>
+</ul>
+<p>Un seul doigt dessine à la fois&#8239;: un deuxième doigt ou la paume sont ignorés pendant le tracé. Un simple appui ou clic fait un point. L’encre qui dépasse du cadre est coupée au bord.</p>
+<p>L’épaisseur du trait est proportionnelle à la hauteur du cadre&#8239;: la signature garde le même aspect quel que soit le niveau de zoom.</p>
+
+<h2 id="couleurs">Couleurs de l’encre</h2>
+<p>Touchez le bouton <strong>Stylo</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-pen"/></svg></span> et choisissez l’une des neuf couleurs&#8239;: noir (par défaut), blanc, gris, bleu foncé, rouge, vert, rose, jaune et orange.</p>
+<p>La couleur s’applique aux tracés suivants&#8239;; ceux déjà dessinés gardent la leur, ce qui permet de mélanger les couleurs dans une même signature.</p>
+
+<h2 id="annuler">Annuler et rétablir</h2>
+<p>Les boutons <strong>Annuler</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-undo"/></svg></span> et <strong>Rétablir</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-redo"/></svg></span> couvrent toutes les modifications&#8239;: ajout, déplacement, redimensionnement et suppression du cadre, chaque tracé, et l’effacement du contenu. Toute nouvelle action après une annulation supprime ce qui pouvait être rétabli.</p>
+<p>Raccourcis clavier&#8239;:</p>
+<table>
+  <tbody>
+    <tr><td>Annuler</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> (<kbd>⌘</kbd>+<kbd>Z</kbd> sur Mac)</td></tr>
+    <tr><td>Rétablir</td><td><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> ou <kbd>Ctrl</kbd>+<kbd>Y</kbd> (<kbd>⌘</kbd>+<kbd>Maj</kbd>+<kbd>Z</kbd> sur Mac)</td></tr>
+  </tbody>
+</table>
+<p>L’historique est remis à zéro quand vous ouvrez un autre fichier.</p>
+
+<h2 id="enregistrer-signature">Enregistrer la signature en PNG</h2>
+<p>Le bouton <strong>Enregistrer la signature</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-sig"/></svg></span> enregistre uniquement le contenu du cadre, en image PNG à fond transparent nommée <code>signature.png</code>. Elle fait au moins 1&#8239;200 pixels de large (trois fois la taille du cadre sur le document), pour pouvoir la réutiliser ailleurs.</p>
+
+<h2 id="enregistrer-document">Enregistrer le document</h2>
+<p>Le bouton <strong>Enregistrer la page</strong> <span class="tbicon"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg></span> ouvre une petite fenêtre qui propose&#8239;:</p>
+<ol>
+  <li>le <strong>format</strong>&#8239;: PDF, PNG ou JPG (présélectionné&#8239;: le format du fichier d’origine, sinon PDF)&#8239;;</li>
+  <li>l’option <strong>Garder le contour du cadre visible</strong>, décochée par défaut&#8239;: si elle est cochée, un fin rectangle gris est tracé autour de la signature&#8239;;</li>
+  <li>trois boutons&#8239;: <strong>Écraser l’original</strong>, <strong>Créer une copie</strong> et <strong>Annuler</strong>.</li>
+</ol>
+<h3>Contenu de chaque format</h3>
+<dl>
+  <dt>PDF, à partir d’un PDF</dt>
+  <dd>Le document d’origine avec toutes ses pages, inchangées, auquel s’ajoute la signature sous forme d’image sur sa page. Le texte reste du texte (sélectionnable et consultable par recherche).</dd>
+  <dt>PDF, à partir d’une image</dt>
+  <dd>Un PDF d’une page contenant l’image d’origine en pleine résolution (un pixel = 1/96 de pouce) et la signature.</dd>
+  <dt>PNG ou JPG, à partir d’un PDF</dt>
+  <dd>L’image d’<strong>une seule page</strong>&#8239;: celle qui contient le cadre (ou, sans cadre, la page la plus visible à l’écran). La fenêtre indique quelle page sera enregistrée. La page est rendue à trois fois sa taille normale (environ 216&#8239;dpi), dans les limites de ce que les navigateurs acceptent.</dd>
+  <dt>PNG ou JPG, à partir d’une image</dt>
+  <dd>L’image à sa taille d’origine, avec la signature.</dd>
+</dl>
+<p>Le JPG ne gère pas la transparence&#8239;: les zones transparentes deviennent blanches. Les JPG sont enregistrés en qualité 92&#8239;%.</p>
+
+<h3 id="ecraser">Écraser l’original, créer une copie ou annuler</h3>
+<dl>
+  <dt>Créer une copie</dt>
+  <dd>Enregistre un nouveau fichier portant le nom de l’original suivi de <code>-signed</code> (par exemple <code>contrat-signed.pdf</code>). Si le navigateur le permet (Chrome, Edge), une fenêtre «&#8239;Enregistrer sous&#8239;» vous laisse choisir le dossier et le nom&#8239;; sinon, le fichier arrive dans votre dossier de téléchargements habituel. Le fichier d’origine n’est pas modifié.</dd>
+  <dt>Écraser l’original</dt>
+  <dd>Remplace le fichier ouvert par la version signée. Le navigateur vous demande l’autorisation la première fois. Ce bouton n’est actif que si toutes ces conditions sont réunies&#8239;:
+    <ul>
+      <li>votre navigateur sait écrire dans les fichiers locaux (fonction <em>File System Access</em>&#8239;: Chrome, Edge et les autres navigateurs basés sur Chromium sur ordinateur&#8239;; ni Firefox, ni Safari, ni la plupart des téléphones)&#8239;;</li>
+      <li>le fichier a été ouvert avec le bouton <em>Ouvrir</em>, ou déposé sur la page dans un tel navigateur (WebSign sait alors où il se trouve)&#8239;;</li>
+      <li>le format choisi est celui de l’original (PDF vers PDF, PNG vers PNG, JPG vers JPG). Un PDF de plusieurs pages ne peut donc être écrasé qu’en PDF, puisque PNG et JPG ne contiennent qu’une page.</li>
+    </ul>
+    Sinon, le bouton est grisé et une courte ligne en dessous en donne la raison. WebSign ne remplace jamais un écrasement par un téléchargement sans vous le dire.</dd>
+  <dt>Annuler</dt>
+  <dd>Ferme la fenêtre sans enregistrer.</dd>
+</dl>
+<p>Vous pouvez enregistrer plusieurs fois de suite sans risque&#8239;: WebSign repart toujours du contenu d’origine, non signé, lu à l’ouverture du fichier&#8239;; la signature n’est donc jamais apposée deux fois. Gardez cependant à l’esprit qu’après un écrasement, le fichier sur votre disque contient définitivement la signature&#8239;: si vous le rouvrez plus tard, elle fait partie du document.</p>
+<p>Si vous quittez ou rechargez la page alors qu’une signature n’a pas été enregistrée, le navigateur vous demande de confirmer.</p>
+
+<h2 id="hors-ligne">Utiliser WebSign hors ligne ou depuis votre ordinateur</h2>
+<p>WebSign se compose de cinq fichiers indépendants. Chaque page contient tout ce dont elle a besoin&#8239;: vous pouvez les copier sur votre ordinateur et les ouvrir directement depuis le disque (en double-cliquant sur <code>index.html</code>), sans serveur web ni connexion Internet&#8239;:</p>
+<pre><code>index.html            page d’accueil (choix de la langue)
+app/websign_en.html   WebSign en anglais
+app/websign_fr.html   WebSign en français
+doc/doc_en.html       ce guide en anglais
+doc/doc_fr.html       ce guide en français</code></pre>
+<p>Les pages de l’application fonctionnent aussi seules&#8239;: <code>app/websign_fr.html</code> suffit pour signer des documents. Conservez l’arborescence si vous voulez que les liens entre les pages fonctionnent.</p>
+
+<h2 id="hebergement">Héberger WebSign sur GitHub Pages</h2>
+<ol>
+  <li>Créez un dépôt GitHub (public, ou privé avec une offre qui autorise Pages).</li>
+  <li>Déposez <code>index.html</code> et les dossiers <code>app/</code> et <code>doc/</code> à la racine du dépôt. Vous pouvez aussi ajouter un fichier vide nommé <code>.nojekyll</code>.</li>
+  <li>Dans le dépôt, ouvrez <em>Settings → Pages</em>, choisissez <em>Deploy from a branch</em>, sélectionnez la branche (par exemple <code>main</code>) et le dossier <code>/ (root)</code>, puis enregistrez.</li>
+  <li>Au bout d’une minute environ, le site est disponible à l’adresse <code>https://&lt;votre-nom&gt;.github.io/&lt;dépôt&gt;/</code>.</li>
+</ol>
+<p>GitHub se contente de servir les fichiers&#8239;: la signature se fait toujours entièrement dans le navigateur du visiteur, et rien n’est renvoyé à GitHub. Tout autre hébergement web statique convient de la même manière.</p>
+
+<h2 id="limites">Limites connues</h2>
+<ul>
+  <li><strong>Ce n’est pas une signature électronique certifiée.</strong> WebSign ajoute une image de votre signature manuscrite. Il n’ajoute ni signature cryptographique ni certificat, et ne prouve pas l’identité du signataire.</li>
+  <li><strong>Un seul cadre à la fois.</strong> Pour signer à plusieurs endroits, enregistrez, ouvrez le fichier enregistré et ajoutez la signature suivante.</li>
+  <li><strong>PDF protégés ou atypiques.</strong> Quand un PDF ne peut pas être modifié directement (en général, un PDF protégé par mot de passe), l’export PDF est composé d’images des pages, à environ 144&#8239;dpi&#8239;: le rendu est identique, mais le texte ne peut plus être sélectionné ni recherché, et le fichier peut être plus lourd. WebSign affiche un message dans ce cas.</li>
+  <li><strong>Affichage de certains PDF.</strong> Pour que la page reste autonome, certaines ressources facultatives de pdf.js ne sont pas incluses&#8239;: les PDF qui utilisent des polices asiatiques non intégrées, ou qui contiennent des images JPEG 2000 ou JBIG2, peuvent s’afficher imparfaitement dans WebSign. Cela ne concerne que l’affichage et les exports PNG/JPG&#8239;; l’export PDF conserve les pages d’origine intactes.</li>
+  <li><strong>Formulaires et annotations</strong> sont affichés tels qu’ils apparaissent dans le PDF, mais ne peuvent pas être remplis.</li>
+  <li><strong>Les exports PNG et JPG ne contiennent qu’une page.</strong> Choisissez PDF pour conserver toutes les pages.</li>
+  <li><strong>Les très grandes pages ou images</strong> sont réduites si nécessaire pour respecter les limites des navigateurs (environ 16&#8239;mégapixels).</li>
+  <li><strong>Navigateurs.</strong> WebSign a été testé avec Chrome sur ordinateur et en émulation de téléphone. Il est conçu pour les versions récentes de Chrome, Edge, Firefox et Safari, sur ordinateur comme sur téléphone, mais ces autres navigateurs n’ont pas tous été testés. Écraser le fichier d’origine nécessite Chrome ou Edge sur ordinateur.</li>
+</ul>
+
+<h2 id="licences">Licences</h2>
+<p>WebSign intègre deux bibliothèques libres, incluses dans les pages de l’application&#8239;:</p>
+<ul>
+  <li><strong>pdf.js</strong> 6.2.108, de Mozilla, sous licence Apache 2.0 — affichage des PDF&#8239;;</li>
+  <li><strong>pdf-lib</strong> 1.17.1, d’Andrew Dillon, sous licence MIT — écriture du PDF signé.</li>
+</ul>
+<p>Le code propre à WebSign est placé dans le domaine public sous <strong>licence Unlicense</strong> (voir le fichier <code>LICENSE</code> du dépôt source). Les bibliothèques pdf.js et pdf-lib intégrées conservent leurs propres licences, dont le texte complet figure dans le dossier <code>vendor/</code> du dépôt.</p>
+
+<h2 id="faq">Questions fréquentes</h2>
+<dl>
+  <dt>Mon document est-il envoyé quelque part&#8239;?</dt>
+  <dd>Non. Tout se passe dans votre navigateur. Vous pouvez le vérifier en coupant Internet après avoir ouvert la page&#8239;: WebSign continue de fonctionner.</dd>
+  <dt>Pourquoi «&#8239;Écraser l’original&#8239;» est-il grisé&#8239;?</dt>
+  <dd>La ligne sous les boutons en donne la raison&#8239;: votre navigateur ne sait pas écrire dans les fichiers locaux, l’emplacement du fichier est inconnu, ou le format choisi diffère de l’original. Utilisez plutôt <em>Créer une copie</em>.</dd>
+  <dt>Où ma copie est-elle enregistrée&#8239;?</dt>
+  <dd>Dans Chrome et Edge, là où vous le choisissez dans la fenêtre «&#8239;Enregistrer sous&#8239;». Dans les autres navigateurs, dans votre dossier de téléchargements (sur iPhone, dans l’app Fichiers, rubrique Téléchargements).</dd>
+  <dt>Ma signature paraît étirée.</dt>
+  <dd>La signature suit la forme du cadre. Redonnez au cadre ses proportions précédentes, ou effacez et signez à nouveau.</dd>
+  <dt>Puis-je signer à l’encre blanche&#8239;?</dt>
+  <dd>Oui, le blanc fait partie des neuf couleurs. C’est utile sur un document foncé&#8239;; sur une page blanche, il est invisible.</dd>
+  <dt>Puis-je réutiliser ma signature&#8239;?</dt>
+  <dd>WebSign ne conserve rien d’une visite à l’autre. Vous pouvez garder le fichier <code>signature.png</code> et l’insérer avec un autre logiciel.</dd>
+  <dt>Comment ouvrir un autre fichier sur mon téléphone&#8239;?</dt>
+  <dd>Rechargez la page, ou revenez à la page d’accueil grâce au logo WebSign en haut à gauche, puis rouvrez l’application.</dd>
+</dl>
